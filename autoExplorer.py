@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from libMA import *
+from _libMA import *
 from config import deviceToken, loginId, password
 import time
 import logging
 import urllib2
 logging.basicConfig(
-    filename='/tmp/MAautoExplorer.log', filemode='a+',
+    #filename='/tmp/MAautoExplorer.log', filemode='a+',
     level=logging.DEBUG,
     format = '%(asctime)-15s#%(message)s'
 )
@@ -31,8 +31,6 @@ while True:
             raise SafeException
         fairyList = user.menu.fairyselect()
         fairyList = fairyList.response.body.fairy_select.fairy_event
-        if isinstance(fairyList,dict):
-            fairyList = [fairyList]
         newFairyList = []
         for fairy_event in fairyList:
             if fairy_event.put_down == "1":  # still alive and not excape
@@ -49,8 +47,6 @@ while True:
                     flag = True
                     if attackers.has_key("attacker"):
                         attackers = attackers.attacker
-                        if isinstance(attackers,dict):
-                            attackers = [attackers]
                         for attacker in attackers:
                             #logging.debug("  Listing Attackers(Look for itself):")
                             #logging.debug("   %s:%s"%( repr(attacker.user_id), attacker.user_name))
@@ -73,7 +69,7 @@ while True:
         pass
     except urllib2.HTTPError, exception:
         logging.debug("http 500 happend, wait for 1min")
-        if exception.code = 500:
+        if exception.code == 500:
             ftimecount -= 1
     except:
         logging.exception("Exception Logged")
@@ -114,8 +110,6 @@ while True:
         logging.debug("target area is %s:%s"%(targetAreaName,targetAreaId))
         floorList = user.exploration.getFloorList(targetAreaId)
         floorList = floorList.response.body.exploration_floor.floor_info_list.floor_info
-        if isinstance(floorList,dict):
-            floorList = [floorList]
         targetFloorId = floorList[0].id
         for floor in floorList:
             if int(floor.progress) < 100:
@@ -123,8 +117,6 @@ while True:
                 break
             continue
             foundItemList = floor.found_item_list.found_item
-            if isinstance(foundItemList,dict):
-                foundItemList = [foundItemList]
             if reduce(lambda a,b:a or b,
                       map(lambda f:f.unlock=="0",
                           foundItemList)):
@@ -153,7 +145,7 @@ while True:
         pass
     except urllib2.HTTPError, exception:
         logging.debug("http 500 happend, wait for 1min")
-        if exception.code = 500:
+        if exception.code == 500:
             timecount -= 1
     except:
         logging.exception("Exception Logged")
