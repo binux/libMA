@@ -22,3 +22,8 @@ USER_AGENT = "Million/100 (ibbot; ibot; 9.9) ib/ibbot/ibbot:9.9/IMM76L/ibbot/tes
 
 # AESkey,god knows where it from
 AESkey = "rBwj1MIAivVN222b"
+
+try:
+    from local_config import *
+except ImportError:
+    pass
