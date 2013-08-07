@@ -17,11 +17,8 @@ class HeaderError(Exception):
         self.code = code
         self.message = message
 
-    def __repr__(self):
-        return '<Error%d>%s' % (self.code, self.message)
-
     def __str__(self):
-        return self.__repr__()
+        return '<Error%d>%s' % (self.code, self.message.encoding('utf8'))
 
 class Card:
     @classmethod
@@ -110,18 +107,59 @@ class MA:
     def get(self, resource, params={}, **kwargs):
         params.update(kwargs)
         xml = etree.fromstring(crypt.decode(self.cat(resource, params=params)))
+        if config.DEBUG:
+            self.last_xml = xml
+            with open("resource/"+resource.replace('~/', '').replace('/', '_'), 'w') as fp:
+                fp.write(etree.tostring(xml, pretty_print=True))
 
         self.parse_header(xml.xpath('/response/header')[0])
 
         return xml.xpath('/response/body')[0]
 
-    LOGIN_PATH="~/login"
     def login(self, login_id, password):
-        body = self.get(self.LOGIN_PATH, login_id=login_id, password=password)
+        body = self.get("~/login", login_id=login_id, password=password)
         self.user_id = body.xpath('./login/user_id/text()')[0]
         return body
 
+    def mainmenu(self):
+        return self.get("~/mainmenu")
+
+    def menulist(self):
+        return self.get("~/menu/menulist")
+
+    def area(self):
+        return self.get("~/exploration/area")
+
+    def floor(self, area_id):
+        return self.get("~/exploration/floor", area_id=area_id)
+
+    def floor_status(self, area_id, floor_id, check=1):
+        return self.get("~/exploration/get_floor", area_id=area_id, floor_id=floor_id, check=check)
+
+    def explore(self, area_id, floor_id, auto_build=1):
+        return self.get("~/exploration/explore", area_id=area_id, floor_id=floor_id, auto_build=auto_build)
+
+    def fairy_select(self):
+        return self.get("~/menu/fairyselect")
+
+    def fairy_floor(self, serial_id, user_id, check=1):
+        return self.get("~/exploration/fairy_floor", serial_id=serial_id, user_id=user_id, check=1)
+
+    def fairy_battle(self, serial_id, user_id):
+        return self.get("~/exploration/fairybattle", serial_id=serial_id, user_id=user_id)
+
+    def fairy_history(self, serial_id, user_id):
+        return self.get("~/exploration/fairyhistory", serial_id=serial_id, user_id=user_id)
+
+    # what for?
+    def fairy_lose(self, serial_id, user_id):
+        return self.get("~/exploration/fairy_lose", serial_id=serial_id, user_id=user_id)
+
+    # error api?
+    def fairy_win(self, serial_id, user_id):
+        return self.get("~/exploration/fairy_win", serial_id=serial_id, user_id=user_id)
+
 if __name__ == '__main__':
     ma = MA()
-    a = ma.login(config.loginId, config.password)
+    login = ma.login(config.loginId, config.password)
     import IPython; IPython.embed()

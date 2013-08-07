@@ -140,7 +140,7 @@ class Exploration(object):
         data = self.app.exploration_fairy__lose(params)
         return data
 
-    def faityWin(self, serialId, userId):
+    def fairyWin(self, serialId, userId):
         params = {
             "serial_id": serialId,
             "user_id": userId,
