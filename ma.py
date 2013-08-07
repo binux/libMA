@@ -17,8 +17,11 @@ class HeaderError(Exception):
         self.code = code
         self.message = message
 
-    def __str__(self):
-        return '<Error%d>%s' % (self.code, self.message.encoding('utf8'))
+    def __repr__(self):
+        return "HeaderError(code=%r, message=%r)" % (self.code, self.message)
+
+    def __unicode__(self):
+        return self.message
 
 class Card:
     @classmethod
@@ -63,7 +66,7 @@ class MA:
     def parse_header(self, header):
         error_code = int(header.xpath('./error/code/text()')[0])
         if error_code:
-            raise HeaderError(error_code, header.xpath('./error/message/text()')[0])
+            raise HeaderError(error_code, unicode(header.xpath('./error/message/text()')[0]))
 
         your_data = header.xpath('./your_data')
         if your_data:
