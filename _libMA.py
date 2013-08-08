@@ -41,6 +41,7 @@ class User(object):
         self.session = None
         self.userId = None
         self.menu = Menu(self.app)
+        self.roundtable = RoundTable(self.app)
         self.exploration = Exploration(self.app)
 
     def login(self):
@@ -70,7 +71,7 @@ class RoundTable(object):
         data = self.app.roundtable_edit(params)
         return data
 
-    def savedeckcard(self, cards, leader):
+    def save(self, cards, leader):
         '7803549,15208758,17258743,empty,empty,empty,empty,empty,empty,empty,empty,empty'
         '17258743'
         cards = cards + ["empty"]*(12-len(cards))
@@ -175,3 +176,4 @@ if __name__ == "__main__":
     device = Device(token=deviceToken)
     user = device.newUser(loginId=loginId, password=password)
     loginData = user.login()
+
