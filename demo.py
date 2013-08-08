@@ -48,7 +48,7 @@ def main():
                 
         # explore
         if ma.ap_max - ma.ap >= floor_cost:
-            print "waiting for ap, current:%d/%d" % (ma.ap, ma.ap_max)
+            print "waiting for ap, ap:%d/%d bc:%d/%d" % (ma.ap, ma.ap_max, ma.bc, ma.bc_max)
             time.sleep(sleep_time)
             ma.mainmenu()
             continue
@@ -66,7 +66,7 @@ def main():
             print "find a fairy: %s lv%s" % (explore.xpath('.//fairy/name/text()')[0], explore.xpath('.//fairy/lv/text()')[0])
             ma.fairy_battle(explore.xpath('.//fairy/serial_id/text()')[0], explore.xpath('.//fairy/discoverer_id/text()')[0])
             touched_fairy.add(explore.xpath('.//fairy/serial_id/text()')[0])
-        if explore.xpath('./explore/next_floor') and explore.xpath('.//next_floor/boos_id/text()')[0] == '0':
+        if explore.xpath('./explore/next_floor') and explore.xpath('.//next_floor//boss_id/text()')[0] == '0':
             floor_id = int(explore.xpath('.//next_floor/floor_info/id/text()')[0])
             floor_cost = int(explore.xpath('.//next_floor/floor_info/cost/text()')[0])
             print "goto next floor:%s cost:%s" % (floor_id, floor_cost)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     try:
         main()
     except _ma.HeaderError, e:
-        print e
+        print e.message, 'sleep for 30min'
         time.sleep(30*60)
     except Exception, e:
         print e
