@@ -75,11 +75,13 @@ def main():
             print "got a card"
 
 if __name__ == '__main__':
-    try:
-        main()
-    except _ma.HeaderError, e:
-        print e.message, 'sleep for 30min'
-        time.sleep(30*60)
-    except Exception, e:
-        print e
-        import IPython; IPython.embed()
+    while True:
+        try:
+            main()
+        except _ma.HeaderError, e:
+            print e.message, 'sleep for 30min'
+            time.sleep(30*60)
+            continue
+        except Exception, e:
+            print e
+            import IPython; IPython.embed()
