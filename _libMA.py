@@ -58,6 +58,28 @@ class User(object):
         data = self.app.mainmenu()
         return data
 
+class RoundTable(object):
+
+    def __init__(self, app):
+        self.app = app
+
+    def edit(self):
+        params = {
+            "move": "1",
+        }
+        data = self.app.roundtable_edit(params)
+        return data
+
+    def savedeckcard(self, cards, leader):
+        '7803549,15208758,17258743,empty,empty,empty,empty,empty,empty,empty,empty,empty'
+        '17258743'
+        cards = cards + ["empty"]*(12-len(cards))
+        params = {
+            "C": ",".join(cards),
+            "lr": leader,
+        }
+        data = self.app.cardselect_savedeckcard(params)
+        return data
 
 class Menu(object):
 
@@ -65,11 +87,11 @@ class Menu(object):
         self.app = app
 
     def menulist(self):
-        data = data = self.app.menu_menulist()
+        data = self.app.menu_menulist()
         return data
 
     def fairyselect(self):
-        data = data = self.app.menu_fairyselect()
+        data  = self.app.menu_fairyselect()
         return data
 
 
