@@ -67,8 +67,8 @@ def main():
             ma.fairy_battle(explore.xpath('.//fairy/serial_id/text()')[0], explore.xpath('.//fairy/discoverer_id/text()')[0])
             touched_fairy.add(explore.xpath('.//fairy/serial_id/text()')[0])
         if explore.xpath('./explore/next_floor') and explore.xpath('.//next_floor/boos_id/text()')[0] == '0':
-            floor_id = int(explore.xpath('.//next_floor/id/text()')[0])
-            floor_cost = int(explore.xpath('.//next_floor/cost/text()')[0])
+            floor_id = int(explore.xpath('.//next_floor/floor_info/id/text()')[0])
+            floor_cost = int(explore.xpath('.//next_floor/floor_info/cost/text()')[0])
             print "goto next floor:%s cost:%s" % (floor_id, floor_cost)
         if explore.xpath('./explore/user_card'):
             print "got a card"
