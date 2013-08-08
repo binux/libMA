@@ -45,6 +45,7 @@ def main():
                                                       fairy_event.xpath('user/name/text()')[0])
                 ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
                 touched_fairy.add(fairy_event.xpath('fairy/serial_id/text()')[0])
+                time.sleep(30) # wait to cooldown? got a can't raise battle error
                 
         # explore
         if ma.ap_max - ma.ap >= floor_cost:
@@ -56,10 +57,10 @@ def main():
         print "exp+%s gold+%s=%s progress:%s%%" % (explore.xpath('.//get_exp/text()')[0],
                                                     explore.xpath('.//gold/text()')[0], ma.gold,
                                                     explore.xpath('.//progress/text()')[0], ),
-        if explore.xpath('.//lvup/text()')[0] == '1':
+        if explore.xpath('explore/lvup/text()')[0] == '1':
             print 'level up!'
         else:
-            print "%sexp to go." % explore.xpath('.//next_exp/text()')[0]
+            print "%sexp to go." % explore.xpath('explore/next_exp/text()')[0]
 
         # event
         if explore.xpath('./explore/fairy'):
