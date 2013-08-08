@@ -66,14 +66,17 @@ class MA:
     def parse_header(self, header):
         error_code = int(header.xpath('./error/code/text()')[0])
         if error_code:
+            self.session_id = None
             raise HeaderError(error_code, unicode(header.xpath('./error/message/text()')[0]))
+
+        self.session_id = header.xpath('./session_id/text()')[0]
 
         your_data = header.xpath('./your_data')
         if your_data:
             your_data = your_data[0]
 
             for attr in ('name', 'leader_serial_id/i', 'town_level/i', 'percentage/i',
-                         'cp/i', 'max_card_num/i', 'free_ap_bc_point/i',
+                         'gold/i', 'cp/i', 'max_card_num/i', 'free_ap_bc_point/i',
                          'friendship_point/i', 'country_id/i', 'ex_gauge/i',
                          'gacha_ticket/i', 'deck_rank/i', 'friends/i', 'friend_max/i',
                          'friends_invitations/i', 'notice_of_menu/i', 'gacha_point/i',
@@ -110,8 +113,8 @@ class MA:
     def get(self, resource, params={}, **kwargs):
         params.update(kwargs)
         xml = etree.fromstring(crypt.decode(self.cat(resource, params=params)))
+        self.last_xml = xml
         if config.DEBUG:
-            self.last_xml = xml
             with open("resource/"+resource.replace('~/', '').replace('/', '_'), 'w') as fp:
                 fp.write(etree.tostring(xml, pretty_print=True))
 
