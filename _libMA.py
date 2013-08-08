@@ -95,6 +95,22 @@ class Menu(object):
         data  = self.app.menu_fairyselect()
         return data
 
+    def friendlist(self, move = "0"):
+        params = {
+            "move": "0",
+        }
+        data = self.app.menu_friendlist(params)
+        return data
+
+    def likeUser(self, users, dialog = "1"):
+        users = ",".join(map(lambda x:str(x),users))
+        params = {
+            "dialog": dialog,
+            "user_id": users,
+        }
+        data = self.app.friend_like__user(params)
+        return data
+
 
 class Exploration(object):
 
@@ -176,4 +192,3 @@ if __name__ == "__main__":
     device = Device(token=deviceToken)
     user = device.newUser(loginId=loginId, password=password)
     loginData = user.login()
-
