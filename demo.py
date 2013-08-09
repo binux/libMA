@@ -12,15 +12,17 @@ import ma as _ma
 sleep_time = 3*60
 touched_fairy = set()
 
+area_id = None
 def main():
     global ma
+    global area_id
     ma = _ma.MA()
     ma.login(config.loginId, config.password)
     assert ma.islogin
 
     for area in ma.area().xpath('//area_info'):
         print '%s %s %s%%' % (area.xpath('id/text()')[0], area.xpath('name/text()')[0], area.xpath('prog_area/text()')[0])
-    area_id = raw_input('plaese choose a area to explore: ')
+    area_id = area_id or raw_input('plaese choose a area to explore: ')
 
     floor_id = 0
     floor_cost = 0
