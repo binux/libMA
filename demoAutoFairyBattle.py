@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from libMA import *
+from _libMA import *
 from config import deviceToken, loginId, password
 
 
