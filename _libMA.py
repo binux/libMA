@@ -59,6 +59,14 @@ class User(object):
         data = self.app.mainmenu()
         return data
 
+    def endTutorial(self):
+        params = {
+            "S": self.session,
+            "step": '7025',
+        }
+        data = self.app.tutorial_next(params)
+        return data
+
 class RoundTable(object):
 
     def __init__(self, app):
