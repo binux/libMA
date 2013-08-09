@@ -62,7 +62,7 @@ class User(object):
     def endTutorial(self):
         params = {
             "S": self.session,
-            "step": '7025',
+            "step": '8000',
         }
         data = self.app.tutorial_next(params)
         return data
