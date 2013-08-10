@@ -5,6 +5,7 @@
 #         http://binux.me
 # Created on 2013-08-05 23:58:01
 
+import random
 import config
 import requests
 from lxml import etree
@@ -19,6 +20,9 @@ class HeaderError(Exception):
 
     def __repr__(self):
         return "HeaderError(code=%r, message=%r)" % (self.code, self.message)
+
+    def __str__(self):
+        return self.message.encode('utf8')
 
     def __unicode__(self):
         return self.message
@@ -43,6 +47,7 @@ class MA:
     BASE_URL = config.BASE_URL
 
     def __init__(self):
+        self.device_id = ''.join([str(random.randint(0, 9)) for x in range(15)])
         self.session = requests.Session()
         self.session.headers.update(self.default_http_header)
         self.session_id = None
@@ -52,16 +57,20 @@ class MA:
     def islogin(self):
         return bool(self.session_id)
 
+    @property
+    def level(self):
+        return self.town_level
+
     def abs_path(self, path):
         if path.startswith('~'):
             path = path.replace('~', self.HOME)
         return urljoin(self.BASE_URL, path)
 
     def cat(self, resource, params={}, **kwargs):
-        params.update(kwargs)
-        params = _cryptParams(params)
-        response = self.session.post(self.abs_path(resource), params)
-        return response.content
+        kwargs.update(params)
+        params = _cryptParams(kwargs)
+        response = self.session.post(self.abs_path(resource), params, params={"cyt": 1})
+        return crypt.decode(response.content)
 
     def parse_header(self, header):
         error_code = int(header.xpath('./error/code/text()')[0])
@@ -90,12 +99,14 @@ class MA:
                 if data:
                     setattr(self, attr, make_up(data[0]))
 
-            self.ap = int(your_data.xpath('./ap/current/text()')[0])
-            self.ap_max = int(your_data.xpath('./ap/max/text()')[0])
-            self.ap_interval_time = int(your_data.xpath('./ap/interval_time/text()')[0])
-            self.bc = int(your_data.xpath('./bc/current/text()')[0])
-            self.bc_max = int(your_data.xpath('./bc/max/text()')[0])
-            self.bc_interval_time = int(your_data.xpath('./bc/interval_time/text()')[0])
+            if your_data.xpath('./ap'):
+                self.ap = int(your_data.xpath('./ap/current/text()')[0])
+                self.ap_max = int(your_data.xpath('./ap/max/text()')[0])
+                self.ap_interval_time = int(your_data.xpath('./ap/interval_time/text()')[0])
+            if your_data.xpath('./bc'):
+                self.bc = int(your_data.xpath('./bc/current/text()')[0])
+                self.bc_max = int(your_data.xpath('./bc/max/text()')[0])
+                self.bc_interval_time = int(your_data.xpath('./bc/interval_time/text()')[0])
 
             if your_data.xpath('./owner_card_list'):
                 self.cards = []
@@ -106,13 +117,9 @@ class MA:
                 for item in your_data.xpath('./itemlist'):
                     self.iterms[item.xpath('./item_id/text()')[0]] = int(item.xpath('./num/text()')[0])
 
-    @property
-    def level(self):
-        return self.town_level
-
     def get(self, resource, params={}, **kwargs):
-        params.update(kwargs)
-        xml = etree.fromstring(crypt.decode(self.cat(resource, params=params)))
+        kwargs.update(params) # params has a same object, don't update it
+        xml = etree.fromstring(self.cat(resource, params=kwargs))
         self.last_xml = xml
         if config.DEBUG:
             with open("resource/"+resource.replace('~/', '').replace('/', '_'), 'w') as fp:
@@ -122,9 +129,27 @@ class MA:
 
         return xml.xpath('/response/body')[0]
 
+    def wordlist(self):
+        return self.session.post("http://dlc.game-CBT.ma.sdo.com:50005/world_list.php", data={"data_str": '{"device_id":"'+self.device_id+'"}'}).json
+
+    def check_inspection(self):
+        return self.cat("~/check_inspection")
+
+    def notification_post_devicetoken(self, login_id, password, token=config.deviceToken, S="nosessionid"):
+        return self.cat("~/notification/post_devicetoken", login_id=login_id, password=password, token=token, S=S) 
+
+    def regist(self, login_id, password, invitation_id, platform=2, device_id=None):
+        if device_id is None:
+            device_id = self.device_id
+        return self.get("~/regist", login_id=login_id, password=password, invitation_id=invitation_id,
+                        platform=platform, param=device_id)
+
+    def save_character(self, name, country=1):
+        return self.get("~/tutorial/save_character", name=name, country=country)
+
     def login(self, login_id, password):
         body = self.get("~/login", login_id=login_id, password=password)
-        self.user_id = body.xpath('./login/user_id/text()')[0]
+        self.user_id = (body.xpath('./login/user_id/text()') or [None, ])[0]
         return body
 
     def mainmenu(self):
@@ -132,6 +157,28 @@ class MA:
 
     def menulist(self):
         return self.get("~/menu/menulist")
+
+    def friendlist(self, move=0):
+        return self.get("~/menu/friendlist", move=move)
+
+    def like_user(self, users, dialog=1):
+        if isinstance(users, list):
+            users = ",".join(map(str, users))
+        return self.get("~/friend/like_user", dialog=dialog, users=users)
+
+    def save_deck_card(self, cards, leader=None):
+        if isinstance(cards, list):
+            cards = ",".join(map(str, cards))
+        if leader is None:
+            leader = cards.split(",", 1)[0]
+        return self.get("~/cardselect/savedeckcard", C=cards, lr=leader)
+
+    # what for?
+    def roundtable_edit(self, move=1):
+        return self.get("~/roundtable/edit", move=move)
+
+    def tutorial_next(self, step=8000):
+        return self.get("~/tutorial/next?cyt=1", S=self.session_id, step=step)
 
     def area(self):
         return self.get("~/exploration/area")
