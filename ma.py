@@ -5,6 +5,7 @@
 #         http://binux.me
 # Created on 2013-08-05 23:58:01
 
+import re
 import random
 import config
 import requests
@@ -28,6 +29,30 @@ class HeaderError(Exception):
         return self.message
 
 class Card:
+    """
+    attrs:
+        critical
+        evolution_price
+        exp
+        exp_diff
+        exp_per
+        holography
+        hp
+        limit_over
+        lv
+        lv_max
+        ma
+        master_card_id
+        material_price
+        max_exp
+        next_exp
+        plus_limit_count
+        power
+        sale_price
+        serial_id
+    """
+    ma = None
+
     @classmethod
     def from_xml(cls, card):
         c = cls()
@@ -35,8 +60,15 @@ class Card:
             setattr(c, node.tag, int(node.text))
         return c
 
-    def __init__(self):
-        pass
+    def set_ma(self, ma):
+        self.ma = ma
+        return self
+
+    def __getattr__(self, key):
+        if self.ma and self.__dict__['master_card_id'] in self.ma.master_cards \
+                and key in self.ma.master_cards[self.master_card_id]:
+            return self.ma.master_cards[self.master_card_id][key]
+        raise AttributeError(key)
 
 class MA:
     default_http_header = {
@@ -111,7 +143,7 @@ class MA:
             if your_data.xpath('./owner_card_list'):
                 self.cards = []
                 for card in your_data.xpath('./owner_card_list/user_card'):
-                    self.cards.append(Card.from_xml(card))
+                    self.cards.append(Card.from_xml(card).set_ma(self))
             if your_data.xpath('./itemlist'):
                 self.iterms = {}
                 for item in your_data.xpath('./itemlist'):
@@ -150,6 +182,44 @@ class MA:
     def login(self, login_id, password):
         body = self.get("~/login", login_id=login_id, password=password)
         self.user_id = (body.xpath('./login/user_id/text()') or [None, ])[0]
+        return body
+
+    def masterdata_card(self):
+        resource = "~/masterdata/card/update"
+        data = self.cat(resource)
+        # fix format bug here
+        data = re.sub("&(?!amp;)", "&amp;", data)
+        xml = etree.fromstring(data)
+        self.last_xml = xml
+        if config.DEBUG:
+            with open("resource/"+resource.replace('~/', '').replace('/', '_'), 'w') as fp:
+                fp.write(etree.tostring(xml, pretty_print=True))
+
+        self.parse_header(xml.xpath('/response/header')[0])
+
+        body = xml.xpath('/response/body')[0]
+
+        # save it
+        self.master_cards = {}
+        for each in body.xpath('//card'):
+            card = {}
+            for attr in ('character_id/i', 'base_hp/i', 'extra/i', 'base_holo_hp/i', 'base_power/i',
+                         'cost/i', 'char_description', 'attack_type/i', 'card_version/i', 'country_id/i',
+                         'lvmax_holo_power/i', 'image1_id/i', 'sale_price/i', 'compound_type/i', 'max_lv/i',
+                         'skill_kana', 'max_lv_holo/i', 'eye_y/i', 'lvmax_holo_hp/i', 'form_id/i', 'data_type/i',
+                         'lvmax_hp/i', 'growth_rate_text', 'lvmax_power/i', 'grow_name', 'grow_type/i',
+                         'distinction/i', 'skill_type/i', 'base_holo_power/i', 'skill_name', 'image2_id/i',
+                         'illustrator', 'name', 'master_card_id/i', 'rarity/i', 'skill_description'):
+                if attr.endswith('/i'):
+                    attr = attr[:-2]
+                    make_up = int
+                else:
+                    make_up = lambda x: x
+                data = each.xpath('./%s/text()' % attr)
+                if data:
+                    card[attr] = make_up(data[0])
+            self.master_cards[card['master_card_id']] = card
+
         return body
 
     def mainmenu(self):
@@ -197,16 +267,20 @@ class MA:
     def productlist(self, type="cp"):
         return self.get("~/menu/productlist", type=type)
 
+    def fairy_select(self):
+        return self.get("~/menu/fairyselect")
+
     def ranking(self, ranktype_id=0, top=0, move=1):
         return self.get("~/ranking/ranking", ranktype_id=ranktype_id, top=top, move=move)
+
 
     def item_use(self, item_id):
         return self.get("~/item/use", item_id=item_id)
     
-    def getcontents(self):
+    def gacha_select(self):
         return self.get("~/gacha/select/getcontents")
 
-    def buy(self, bulk=1, auto_build=1, product_id=1): #DSjuan: product_id=2, auto_build=0, bulk=0
+    def gacha_buy(self, bulk=1, auto_build=1, product_id=1): #DSjuan: product_id=2, auto_build=0, bulk=0
         return self.get("~/gacha/buy", bulk=bulk, auto_build=auto_build, product_id=product_id)
 
 
@@ -216,15 +290,15 @@ class MA:
     def pointsetting(self, ap, bc):
         return self.get("~/town/pointsetting", ap=ap, bc=bc)
 
-    def exchange(self, mode=1):
+    def card_exchange(self, mode=1):
         return self.get("~/card/exchange", mode=mode)
 
-    def compound(self, base_serial_id, add_serial_id):
+    def card_compound(self, base_serial_id, add_serial_id):
         if isinstance(add_serial_id, list):
             return ",".join(map(str, add_serial_id))
         return self.get("~/compound/buildup/compound", base_serial_id=base_serial_id, add_serial_id=add_serial_id)
 
-    def sell(self, serial_id):
+    def card_sell(self, serial_id):
         if isinstance(serial_id, list):
             return ",".join(map(str, serial_id))
         return self.get("~/trunk/sell", serial_id=serial_id)
@@ -267,6 +341,8 @@ class MA:
 
     def save_deck_card(self, cards, leader=None):
         if isinstance(cards, list):
+            while len(cards) < 12:
+                cards.append('empty')
             cards = ",".join(map(str, cards))
         if leader is None:
             leader = cards.split(",", 1)[0]
@@ -283,10 +359,10 @@ class MA:
     def story_battle(self):
         return self.get("~/story/battle")
 
-    def scenario_start_scenario(self, scenario_id):
+    def start_scenario(self, scenario_id):
         return self.get("~/scenario/start_scenario", scenario_id=scenario_id)
 
-    def scenario_next_scenario(self, phase_id, scenario_id):
+    def next_scenario(self, phase_id, scenario_id):
         return self.get("~/scenario/next_scenario", phase_id=phase_id, scenario_id=scenario_id)
 
     def start_eventsc(self, scenario_id):
@@ -295,8 +371,8 @@ class MA:
     def next_eventsc(self, scenario_id, phase_id):
         return self.get("~/scenario/next_eventsc", scenario_id=scenario_id, phase_id=phase_id)
 
-    def tutorial_next(self, step=8000):
-        return self.get("~/tutorial/next?cyt=1", S=self.session_id, step=step)
+    def tutorial_next(self, step=7025):
+        return self.get("~/tutorial/next", S=self.session_id, step=step)
 
 
     def battle_area(self):
@@ -320,9 +396,6 @@ class MA:
 
     def explore(self, area_id, floor_id, auto_build=1):
         return self.get("~/exploration/explore", area_id=area_id, floor_id=floor_id, auto_build=auto_build)
-
-    def fairy_select(self):
-        return self.get("~/menu/fairyselect")
 
     def fairy_floor(self, serial_id, user_id, check=1):
         return self.get("~/exploration/fairy_floor", serial_id=serial_id, user_id=user_id, check=1)
