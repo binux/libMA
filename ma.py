@@ -158,13 +158,112 @@ class MA:
     def menulist(self):
         return self.get("~/menu/menulist")
 
+    def playerinfo(self, user_id=None, kind=6): # kind: 1=other 6=self
+        if not user_id:
+            user_id = self.user_id
+        return self.get("~/menu/playerinfo", user_id=user_id, kind=kind)
+
     def friendlist(self, move=0):
         return self.get("~/menu/friendlist", move=move)
+
+    def other_list(self):
+        return self.get("~/menu/other_list")
+
+    def rewardbox(self):
+        return self.get("~/menu/rewardbox")
+
+    def get_rewards(self, notice_id):
+        if isinstance(notice_id, list):
+            return ",".join(map(str, notice_id))
+        return self.get("~/menu/get_rewards", notice_id=notice_id)
+
+    def goodlist(self, user_id=None):
+        if not user_id:
+            user_id = self.user_id
+        return self.get("~/menu/goodlist", user_id=user_id)
+
+    def battlehistory(self):
+        return self.get("~/menu/battlehistory")
+
+    def cardcollection(self):
+        return self.get("~/menu/cardcollection")
+    
+    def haveparts(self):
+        return self.get("~/menu/haveparts")
+
+    def towneventlist(self, check=1):
+        return self.get("~/menu/towneventlist", check=check)
+
+    def productlist(self, type="cp"):
+        return self.get("~/menu/productlist", type=type)
+
+    def ranking(self, ranktype_id=0, top=0, move=1):
+        return self.get("~/ranking/ranking", ranktype_id=ranktype_id, top=top, move=move)
+
+    def item_use(self, item_id):
+        return self.get("~/item/use", item_id=item_id)
+    
+    def getcontents(self):
+        return self.get("~/gacha/select/getcontents")
+
+    def buy(self, bulk=1, auto_build=1, product_id=1): #DSjuan: product_id=2, auto_build=0, bulk=0
+        return self.get("~/gacha/buy", bulk=bulk, auto_build=auto_build, product_id=product_id)
+
+
+    def lvup_status(self):
+        return self.get("~/town/lvup_status")
+
+    def pointsetting(self, ap, bc):
+        return self.get("~/town/pointsetting", ap=ap, bc=bc)
+
+    def exchange(self, mode=1):
+        return self.get("~/card/exchange", mode=mode)
+
+    def compound(self, base_serial_id, add_serial_id):
+        if isinstance(add_serial_id, list):
+            return ",".join(map(str, add_serial_id))
+        return self.get("~/compound/buildup/compound", base_serial_id=base_serial_id, add_serial_id=add_serial_id)
+
+    def sell(self, serial_id):
+        if isinstance(serial_id, list):
+            return ",".join(map(str, serial_id))
+        return self.get("~/trunk/sell", serial_id=serial_id)
+
 
     def like_user(self, users, dialog=1):
         if isinstance(users, list):
             users = ",".join(map(str, users))
         return self.get("~/friend/like_user", dialog=dialog, users=users)
+
+    def add_friend(self, user_id, dialog=1):
+        if isinstance(user_id, list):
+            users = ",".join(map(str, user_id))
+        return self.get("~/friend/add_friend", user_id=user_id, dialog=dialog)
+
+    def cancel_apply(self, user_id, dialog=1):
+        if isinstance(user_id, list):
+            users = ",".join(map(str, user_id))
+        return self.get("~/friend/cancel_apply", user_id=user_id, dialog=dialog)
+
+    def remove_friend(self, user_id, dialog=1):
+        if isinstance(user_id, list):
+            users = ",".join(map(str, user_id))
+        return self.get("~/friend/remove_friend", user_id=user_id, dialog=dialog)
+
+    def friend_notice(self, move=0):
+        return self.get("~/menu/friend_notice", move=move)
+
+    def friend_appstate(self, move=0):
+        return self.get("~/menu/friend_appstate", move=move)
+
+    def comment_update(self, greeting="libma"):
+        return self.get("~/comment/update", greeting=greeting)
+
+    def comment_send(self, user_id, like_message="libma", comment_id=None):
+        if comment_id is None:
+            comment_id = self.user_id
+        return self.get("~/comment/send", comment_id=comment_id, user_id=user_id, like_message=like_message)
+
 
     def save_deck_card(self, cards, leader=None):
         if isinstance(cards, list):
@@ -177,8 +276,38 @@ class MA:
     def roundtable_edit(self, move=1):
         return self.get("~/roundtable/edit", move=move)
 
+    
+    def story_getoutline(self, check=1):
+        return self.get("~/story/getoutline", check=check)
+
+    def story_battle(self):
+        return self.get("~/story/battle")
+
+    def scenario_start_scenario(self, scenario_id):
+        return self.get("~/scenario/start_scenario", scenario_id=scenario_id)
+
+    def scenario_next_scenario(self, phase_id, scenario_id):
+        return self.get("~/scenario/next_scenario", phase_id=phase_id, scenario_id=scenario_id)
+
+    def start_eventsc(self, scenario_id):
+        return self.get("~/scenario/start_eventsc", scenario_id=scenario_id)
+
+    def next_eventsc(self, scenario_id, phase_id):
+        return self.get("~/scenario/next_eventsc", scenario_id=scenario_id, phase_id=phase_id)
+
     def tutorial_next(self, step=8000):
         return self.get("~/tutorial/next?cyt=1", S=self.session_id, step=step)
+
+
+    def battle_area(self):
+        return self.get("~/battle/area")
+
+    def battle_userlist(self, knight_id=0, move=1, parts_id=0):
+        return self.get("~/battle/battle_userlist", knight_id=knight_id, move=move, parts_id=parts_id)
+
+    def battle_battle(self, user_id, lake_id=0, parts_id=0):
+        return self.get("~/battle/battle", user_id=user_id, lake_id=lake_id, parts_id=parts_id)
+
 
     def area(self):
         return self.get("~/exploration/area")
