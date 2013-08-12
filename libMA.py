@@ -96,7 +96,7 @@ class User(BaseObject):
     def get(self, path, params={}):
         url = urljoin(config.BASE_URL, "/connect/app/")
         url = urljoin(url, path)
-        print url
+        #print url
         data = XMLObject(connect(url, params,self.opener))
         self._update(data)
         return data
@@ -135,7 +135,7 @@ class Fairy(BaseObject):
 
     def _fetch(self):
         if True or not self._cache:
-            print "fetch fairy detail",self.id,self.playerid
+            #print "fetch fairy detail",self.id,self.playerid
             params = {
                 "serial_id": self.id,
                 "user_id": self.playerid,
@@ -174,6 +174,7 @@ class Area(BaseObject):
             self.name = data.name
             self.progress = [data.prog_area, data.prog_item]
             self.type = data.area_type
+            self.cost = data.cost
             self._data = data
     
     def getFloorList(self):
@@ -199,7 +200,6 @@ class Floor(BaseObject):
                              len(filter(lambda x:x[0] == "1",
                                         self.itemList))*100/len(self.itemList)]
             self._data = data
-        print self._data
 
     def _detail(self):
         params = {
@@ -216,7 +216,7 @@ class Floor(BaseObject):
             "auto_build": "1",
         }
         data = self.get("exploration/explore", params)
-        #return data
+        return data
 
 class Roundtable(BaseObject):
 

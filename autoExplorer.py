@@ -7,7 +7,7 @@ import time
 import logging
 import urllib2
 logging.basicConfig(
-    filename='/tmp/MAautoExplorer.log', filemode='a+',
+    #filename='/tmp/MAautoExplorer.log', filemode='a+',
     level=logging.DEBUG,
     format = '%(asctime)-15s#%(message)s'
 )
