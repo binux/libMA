@@ -20,6 +20,32 @@ def main():
     ma.login(config.loginId, config.password)
     assert ma.islogin
 
+    def build_roundtable():
+        if ma.bc - ma.cost > 100:
+            top_cards = sorted(ma.cards.values(),
+                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True)[:12]
+
+            chose = 3
+            while chose < len(top_cards) \
+                    and ma.bc - sum([x.cost for x in top_cards[:chose]]) > 100:
+                chose += 3
+
+            print 'changing roundtable:'
+            for i in range(0, chose, 3):
+                print '%s | %s | %s' % tuple([x.name for x in top_cards[i:i+3]])
+            ma.save_deck_card(top_cards[:chose])
+            return True
+        elif ma.bc - ma.cost >= 5:
+            return True
+        else:
+            min_cost_card = sorted(ma.cards.values(),
+                    key=lambda x: (x.cost, -(x.hp+x.power)))[0]
+            if ma.bc < min_cost_card.cost:
+                return False
+            print 'changing roundtable: %s' % min_cost_card.name
+            ma.save_deck_card([min_cost_card, ])
+            return True
+
     for area in ma.area().xpath('//area_info'):
         print '%s %s %s%%' % (area.xpath('id/text()')[0], area.xpath('name/text()')[0], area.xpath('prog_area/text()')[0])
     area_id = area_id or raw_input('plaese choose a area to explore: ')
@@ -41,7 +67,7 @@ def main():
                     and fairy_event.xpath('fairy/serial_id/text()')[0] not in touched_fairy \
                     and ma.user_id not in ma.fairy_floor(fairy_event.xpath('fairy/serial_id/text()')[0],
                             fairy_event.xpath('user/id/text()')[0]).xpath('//attacker/user_id/text()') \
-                    and ma.bc > 20:
+                    and build_roundtable():
                 print "touch fairy: %slv%s by %s" % (fairy_event.xpath('fairy/name/text()')[0],
                                                       fairy_event.xpath('fairy/lv/text()')[0],
                                                       fairy_event.xpath('user/name/text()')[0])

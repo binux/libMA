@@ -141,9 +141,10 @@ class MA:
                 self.bc_interval_time = int(your_data.xpath('./bc/interval_time/text()')[0])
 
             if your_data.xpath('./owner_card_list'):
-                self.cards = []
+                self.cards = {}
                 for card in your_data.xpath('./owner_card_list/user_card'):
-                    self.cards.append(Card.from_xml(card).set_ma(self))
+                    card = Card.from_xml(card).set_ma(self)
+                    self.cards[card.serial_id] = card
             if your_data.xpath('./itemlist'):
                 self.iterms = {}
                 for item in your_data.xpath('./itemlist'):
@@ -341,17 +342,40 @@ class MA:
 
     def save_deck_card(self, cards, leader=None):
         if isinstance(cards, list):
+            _cards = []
+            for card in cards:
+                if isinstance(card, Card):
+                    _cards.append(card.serial_id)
+                else:
+                    _cards.append(card)
+            cards = _cards
             while len(cards) < 12:
                 cards.append('empty')
             cards = ",".join(map(str, cards))
+
         if leader is None:
             leader = cards.split(",", 1)[0]
-        return self.get("~/cardselect/savedeckcard", C=cards, lr=leader)
+        elif isinstance(leader, Card):
+            leader = leader.serial_id
 
-    # what for?
+        data = self.get("~/cardselect/savedeckcard", C=cards, lr=leader)
+        self.roundtable = [self.cards[int(x)] for x in \
+                data.xpath('//deck_cards/text()')[0].split(',') if x != 'empty']
+        return data
+
     def roundtable_edit(self, move=1):
-        return self.get("~/roundtable/edit", move=move)
+        data = self.get("~/roundtable/edit", move=move)
+        self.roundtable = [self.cards[int(x)] for x in \
+                data.xpath('//deck_cards/text()')[0].split(',') if x != 'empty']
+        return data
 
+    @property
+    def cost(self):
+        if not getattr(self, 'master_cards', None):
+            self.masterdata_card()
+        if not getattr(self, 'roundtable', None):
+            self.roundtable_edit()
+        return sum([x.cost for x in self.roundtable])
     
     def story_getoutline(self, check=1):
         return self.get("~/story/getoutline", check=check)
