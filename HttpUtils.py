@@ -29,7 +29,7 @@ class App(object):
         def func(params = {}, opener = None):
             if opener == None:
                 opener = self.opener
-            return connect(url, params = params, opener = opener)
+            return XML2Object(connect(url, params = params, opener = opener))
         return func
 
 # urllib2.install_opener(opener)
@@ -74,8 +74,6 @@ def connect(url, params = {}, opener = None):
                     break
                 except:
                     pass
-    if rtn != None:
-        rtn = XML2Object(rtn)
     return rtn
 
 def connectPOST(url, opeener, params):

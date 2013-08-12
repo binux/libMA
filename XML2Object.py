@@ -13,12 +13,14 @@ class object_dict(dict):
         dict.__init__(self, initd)
 
     def __getattr__(self, item):
-        d = self.__getitem__(item)
-        # if value is the only key in object, you can omit it
-        if isinstance(d, dict) and 'value' in d and len(d) == 1:
-            return d['value']
-        else:
-            return d
+        return self.__getitem__(item)
+
+    def __getitem__(self, item):
+        try:
+            val = dict.__getitem__(self, item)
+            return val
+        except:
+            None
 
     def __iter__(self):
         yield self
@@ -31,9 +33,87 @@ class object_dict(dict):
 class XML2Object(object_dict):
 
     def __init__(self, xml):
-        dom = XML2dict().fromstring(xml)
-        object_dict.__init__(self, dom)
+        self.dom = XML2dict().fromstring(xml)
+        object_dict.__init__(self, self.dom)
 
+def dfs(obj, name):
+    lst = XMLObject()
+    if isinstance(obj, dict):
+        if name in obj:
+            if isinstance(obj[name], list):
+                lst += obj[name]
+            else:
+                lst.append(obj[name])
+        for item in obj.values():
+            lst += dfs(item, name)
+    elif isinstance(obj, list):
+        for item in obj:
+            lst += dfs(item, name)
+    return lst
+
+class UUObject(list):
+    
+    def __init__(self, init = []):
+        if isinstance(init,list):
+            list.__init__(self, init)
+        else:
+            list.__init__(self, [init, ])
+
+    def __getattr__(self, name):
+        try:
+            return list.__getattr__(self, name)
+        except:
+            try:
+                if name in dir(self[0]):
+                    return getattr(self[0],name)
+            except:
+                pass
+        return self[name]
+
+    def __getitem__(self, name):
+        if isinstance(name,int):
+            return list.__getitem__(self, name)
+        else:
+            return dfs(self,name)
+
+    def val(self):
+        if len(self)>0:
+            return self[0]
+        else:
+            return None
+
+    def __unicode__(self):
+        if len(self)>0:
+            return unicode(self[0])
+        return u""
+    
+    def __str__(self):
+        return unicode(self).encode("u8")
+
+    def __int__(self):
+        return int(str(self))
+
+    def eq(self, index):
+        if len(self)<index:
+            return self[index]
+        else:
+            return None
+
+    def find(self, func):
+        for item in self:
+            if func(item):
+                return item
+
+    def findall(self, func):
+        return UUObject(filter(func, self))
+
+class XMLObject(UUObject):
+
+    def __init__(self, xml = None):
+        if xml:
+            UUObject.__init__(self,[XML2dict().fromstring(xml),])
+        else:
+            UUObject.__init__(self,[])
 
 class XML2dict(object):
 
@@ -59,9 +139,10 @@ class XML2dict(object):
             if not isinstance(old, list):
                 node_tree.pop(tag)
                 node_tree[tag] = [
-                    old]  # multi times, so change old dict to a list
+                    old, ]  # multi times, so change old dict to a list
             node_tree[tag].append(tree)  # add the new one
-
+        if "value" in node_tree and len(node_tree) == 1:
+            return node_tree["value"]
         return node_tree
 
     def _namespace_split(self, tag, value):
@@ -79,3 +160,4 @@ class XML2dict(object):
         t = ElementTree.fromstring(s)
         root_tag, root_tree = self._namespace_split(t.tag, self._parse_node(t))
         return object_dict({root_tag: root_tree})
+
