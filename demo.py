@@ -91,7 +91,7 @@ def main():
             print "%sexp to go." % explore.xpath('explore/next_exp/text()')[0]
 
         # event
-        if explore.xpath('./explore/fairy'):
+        if explore.xpath('./explore/fairy') and build_roundtable():
             print "find a fairy: %s lv%s" % (explore.xpath('.//fairy/name/text()')[0], explore.xpath('.//fairy/lv/text()')[0])
             ma.fairy_battle(explore.xpath('.//fairy/serial_id/text()')[0], explore.xpath('.//fairy/discoverer_id/text()')[0])
             touched_fairy.add(explore.xpath('.//fairy/serial_id/text()')[0])
