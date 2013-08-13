@@ -9,7 +9,8 @@ import time
 import config
 import ma as _ma
 
-sleep_time = 3*60
+FAIRY_BATTLE_COOLDOWN = 30
+SLEEP_TIME = 3*60
 touched_fairy = set()
 
 area_id = None
@@ -72,22 +73,24 @@ def main():
     while True:
         # check fairy
         for fairy_event in ma.fairy_select().xpath('//fairy_event'):
-            if fairy_event.xpath('put_down/text()')[0] == '1' \
+            if fairy_event.xpath('put_down/text()')[0] == '1':
+                fairy_info = ma.fairy_floor(fairy_event.xpath('fairy/serial_id/text()')[0],
+                                fairy_event.xpath('user/id/text()')[0])
+                if int(fairy_info.xpath('//fairy/hp/text()')[0]) > 0 \
                     and fairy_event.xpath('fairy/serial_id/text()')[0] not in touched_fairy \
-                    and ma.user_id not in ma.fairy_floor(fairy_event.xpath('fairy/serial_id/text()')[0],
-                            fairy_event.xpath('user/id/text()')[0]).xpath('//attacker/user_id/text()') \
+                    and ma.user_id not in fairy_info.xpath('//attacker/user_id/text()') \
                     and build_roundtable():
-                print "touch fairy: %slv%s by %s" % (fairy_event.xpath('fairy/name/text()')[0],
-                                                      fairy_event.xpath('fairy/lv/text()')[0],
-                                                      fairy_event.xpath('user/name/text()')[0])
-                ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
-                touched_fairy.add(fairy_event.xpath('fairy/serial_id/text()')[0])
-                time.sleep(30) # wait to cooldown? got a can't raise battle error
+                    print "touch fairy: %slv%s by %s" % (fairy_event.xpath('fairy/name/text()')[0],
+                                                          fairy_event.xpath('fairy/lv/text()')[0],
+                                                          fairy_event.xpath('user/name/text()')[0])
+                    ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
+                    touched_fairy.add(fairy_event.xpath('fairy/serial_id/text()')[0])
+                    time.sleep(FAIRY_BATTLE_COOLDOWN) # waiting for cooldown? got a can't raise battle error
                 
         # explore
         if ma.ap_max - ma.ap >= floor_cost:
             print "waiting for ap, ap:%d/%d bc:%d/%d" % (ma.ap, ma.ap_max, ma.bc, ma.bc_max)
-            time.sleep(sleep_time)
+            time.sleep(SLEEP_TIME)
             ma.mainmenu()
             continue
         explore = ma.explore(area_id, floor_id)
