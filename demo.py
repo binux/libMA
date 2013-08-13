@@ -22,13 +22,22 @@ def main():
 
     def build_roundtable():
         if ma.bc - ma.cost > 100:
-            top_cards = sorted(ma.cards.values(),
-                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True)[:12]
+            top_cards = []
+            top_card_masters = set()
+            for card in sorted(ma.cards.values(),
+                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True):
+                if card.master_card_id not in top_card_masters:
+                    top_cards.append(card)
+                    top_card_masters.add(card.master_card_id)
 
-            chose = 3
-            while chose < len(top_cards) \
-                    and ma.bc - sum([x.cost for x in top_cards[:chose]]) > 100:
+            chose = 0
+            while chose < 12:
                 chose += 3
+                if ma.bc - sum([x.cost for x in top_cards[:chose]]) < 2:
+                    chose -= 3
+                    break
+            if chose == 0:
+                chose = 3
 
             print 'changing roundtable:'
             for i in range(0, chose, 3):
