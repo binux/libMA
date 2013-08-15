@@ -9,7 +9,7 @@ import time
 import config
 import ma as _ma
 
-FAIRY_BATTLE_COOLDOWN = 30
+FAIRY_BATTLE_COOLDOWN = 20
 SLEEP_TIME = 3*60
 touched_fairy = set()
 
@@ -34,7 +34,7 @@ def main():
             chose = 0
             while chose < 12:
                 chose += 3
-                if ma.bc - sum([x.cost for x in top_cards[:chose]]) < 2:
+                if ma.bc - sum([x.cost for x in top_cards[:chose]]) < 150:
                     chose -= 3
                     break
             if chose == 0:
@@ -119,8 +119,8 @@ if __name__ == '__main__':
         try:
             main()
         except _ma.HeaderError, e:
-            print e.message, 'sleep for 30min'
-            time.sleep(30*60)
+            print e.message, 'sleep for 10min'
+            time.sleep(10*60)
             continue
         except Exception, e:
             print e
