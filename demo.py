@@ -5,6 +5,7 @@
 #         http://binux.me
 # Created on 2013-08-08 00:15:50
 
+import sys
 import time
 import config
 import ma as _ma
@@ -13,7 +14,7 @@ FAIRY_BATTLE_COOLDOWN = 20
 SLEEP_TIME = 3*60
 touched_fairy = set()
 
-area_id = None
+area_id = sys.argv[1] if len(sys.argv) > 1 else None
 def main():
     global ma
     global area_id
