@@ -49,6 +49,8 @@ def main():
             return True
         elif ma.bc - ma.cost >= KEEP_BC:
             return True
+        elif ma.bc - ma.cost >= 0 and ma.cost <= 10:
+            return True
         else:
             min_cost_card = sorted(ma.cards.values(),
                     key=lambda x: (x.cost, -(x.hp+x.power)))[0]
