@@ -12,6 +12,7 @@ import ma as _ma
 
 FAIRY_BATTLE_COOLDOWN = 20
 SLEEP_TIME = 3*60
+KEEP_BC = 150
 touched_fairy = set()
 
 area_id = sys.argv[1] if len(sys.argv) > 1 else None
@@ -23,7 +24,7 @@ def main():
     assert ma.islogin
 
     def build_roundtable():
-        if ma.bc - ma.cost > 100:
+        if ma.bc - ma.cost > KEEP_BC:
             top_cards = []
             top_card_masters = set()
             for card in sorted(ma.cards.values(),
@@ -35,7 +36,7 @@ def main():
             chose = 0
             while chose < 12:
                 chose += 3
-                if ma.bc - sum([x.cost for x in top_cards[:chose]]) < 150:
+                if ma.bc - sum([x.cost for x in top_cards[:chose]]) < KEEP_BC:
                     chose -= 3
                     break
             if chose == 0:
@@ -46,7 +47,7 @@ def main():
                 print '%s | %s | %s' % tuple([x.name for x in top_cards[i:i+3]])
             ma.save_deck_card(top_cards[:chose])
             return True
-        elif ma.bc - ma.cost >= 5:
+        elif ma.bc - ma.cost >= KEEP_BC:
             return True
         else:
             min_cost_card = sorted(ma.cards.values(),
