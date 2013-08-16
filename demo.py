@@ -66,8 +66,8 @@ def main():
         for area in areas:
             print '%s %s %s%%' % (area.xpath('id/text()')[0], area.xpath('name/text()')[0], area.xpath('prog_area/text()')[0])
         area_id = raw_input('plaese choose a area to explore: ')
-    elif area_id not in int(area.xpath('//id/text()')):
-        area_id = max(area.xpath('//id/text()'))
+    elif area_id not in int(areas.xpath('//id/text()')):
+        area_id = max(areas.xpath('//id/text()'))
 
     floor_id = 0
     floor_cost = 0
