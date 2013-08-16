@@ -3,7 +3,7 @@ from ma import MA
 
 login_id = sys.argv[1]
 password = sys.argv[2]
-regist = sys.argv[3]
+#regist = sys.argv[3]
 
 ma = MA()
 ma.login(login_id, password)
