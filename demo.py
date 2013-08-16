@@ -66,7 +66,7 @@ def main():
         for area in areas.xpath('//area_info'):
             print '%s %s %s%%' % (area.xpath('id/text()')[0], area.xpath('name/text()')[0], area.xpath('prog_area/text()')[0])
         area_id = raw_input('plaese choose a area to explore: ')
-    elif area_id not in int(areas.xpath('//area_info/id/text()')):
+    elif area_id not in areas.xpath('//area_info/id/text()'):
         area_id = max(areas.xpath('//area_info/id/text()'))
 
     floor_id = 0
@@ -104,7 +104,7 @@ def main():
                 try:
                     ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
                 except _ma.HeaderError, e:
-                    if int(e.code) != 8000:
+                    if e.code != 8000:
                         raise
                     time.sleep(10)
                 time.sleep(FAIRY_BATTLE_COOLDOWN) # waiting for cooldown? got a can't raise battle error
