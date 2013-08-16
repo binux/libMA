@@ -61,13 +61,13 @@ def main():
             ma.save_deck_card([min_cost_card, ])
             return True
 
-    areas = ma.area().xpath('//area_info')
+    areas = ma.area()
     if not area_id:
-        for area in areas:
+        for area in areas.xpath('//area_info'):
             print '%s %s %s%%' % (area.xpath('id/text()')[0], area.xpath('name/text()')[0], area.xpath('prog_area/text()')[0])
         area_id = raw_input('plaese choose a area to explore: ')
-    elif area_id not in int(areas.xpath('//id/text()')):
-        area_id = max(areas.xpath('//id/text()'))
+    elif area_id not in int(areas.xpath('//area_info/id/text()')):
+        area_id = max(areas.xpath('//area_info/id/text()'))
 
     floor_id = 0
     floor_cost = 0
