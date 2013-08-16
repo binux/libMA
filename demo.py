@@ -11,6 +11,7 @@ import config
 import ma as _ma
 
 FAIRY_BATTLE_COOLDOWN = 20
+KEEP_FAIRY = 10*60
 SLEEP_TIME = 3*60
 KEEP_BC = 150
 touched_fairy = set()
@@ -60,9 +61,13 @@ def main():
             ma.save_deck_card([min_cost_card, ])
             return True
 
-    for area in ma.area().xpath('//area_info'):
-        print '%s %s %s%%' % (area.xpath('id/text()')[0], area.xpath('name/text()')[0], area.xpath('prog_area/text()')[0])
-    area_id = area_id or raw_input('plaese choose a area to explore: ')
+    areas = ma.area().xpath('//area_info')
+    if not area_id:
+        for area in areas:
+            print '%s %s %s%%' % (area.xpath('id/text()')[0], area.xpath('name/text()')[0], area.xpath('prog_area/text()')[0])
+        area_id = raw_input('plaese choose a area to explore: ')
+    elif area_id not in int(area.xpath('//id/text()')):
+        area_id = max(area.xpath('//id/text()'))
 
     floor_id = 0
     floor_cost = 0
@@ -76,47 +81,66 @@ def main():
 
     while True:
         # check fairy
+        ma.my_fairy = False
         for fairy_event in ma.fairy_select().xpath('//fairy_event'):
-            if fairy_event.xpath('put_down/text()')[0] == '1':
-                fairy_info = ma.fairy_floor(fairy_event.xpath('fairy/serial_id/text()')[0],
-                                fairy_event.xpath('user/id/text()')[0])
-                if int(fairy_info.xpath('//fairy/hp/text()')[0]) > 0 \
-                    and fairy_event.xpath('fairy/serial_id/text()')[0] not in touched_fairy \
-                    and ma.user_id not in fairy_info.xpath('//attacker/user_id/text()') \
-                    and build_roundtable():
-                    print "touch fairy: %slv%s by %s" % (fairy_event.xpath('fairy/name/text()')[0],
-                                                          fairy_event.xpath('fairy/lv/text()')[0],
-                                                          fairy_event.xpath('user/name/text()')[0])
+            if fairy_event.xpath('user/id/text()') == ma.user_id:
+                ma.my_fairy = True
+            if fairy_event.xpath('put_down/text()')[0] != '1':
+                continue
+            if ma.bc < KEEP_BC and fairy_event.xpath('fairy/serial_id/text()')[0] in touched_fairy:
+                continue
+
+            fairy_info = ma.fairy_floor(fairy_event.xpath('fairy/serial_id/text()')[0],
+                            fairy_event.xpath('user/id/text()')[0])
+            if int(fairy_info.xpath('//fairy/hp/text()')[0]) <= 0:
+                continue
+            if ma.bc < KEEP_BC and ma.user_id in fairy_info.xpath('//attacker/user_id/text()'):
+                touched_fairy.add(fairy_info.xpath('//fairy/serial_id/text()')[0])
+                continue
+            if build_roundtable():
+                print "touch fairy: %slv%s by %s" % (fairy_event.xpath('fairy/name/text()')[0],
+                                                     fairy_event.xpath('fairy/lv/text()')[0],
+                                                     fairy_event.xpath('user/name/text()')[0])
+                try:
                     ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
-                    touched_fairy.add(fairy_event.xpath('fairy/serial_id/text()')[0])
-                    time.sleep(FAIRY_BATTLE_COOLDOWN) # waiting for cooldown? got a can't raise battle error
+                except _ma.HeaderError, e:
+                    if int(e.code) != 8000:
+                        raise
+                    time.sleep(10)
+                time.sleep(FAIRY_BATTLE_COOLDOWN) # waiting for cooldown? got a can't raise battle error
                 
         # explore
-        if ma.ap_max - ma.ap >= floor_cost:
+        if ma.my_fairy:
+            ap_limit = ma.ap_max - 20
+        else:
+            ap_limit = ma.ap_max / 2
+        if ma.ap < ap_limit:
             print "waiting for ap, ap:%d/%d bc:%d/%d" % (ma.ap, ma.ap_max, ma.bc, ma.bc_max)
             time.sleep(SLEEP_TIME)
             ma.mainmenu()
             continue
-        explore = ma.explore(area_id, floor_id)
-        print "exp+%s gold+%s=%s progress:%s%%" % (explore.xpath('.//get_exp/text()')[0],
-                                                    explore.xpath('.//gold/text()')[0], ma.gold,
-                                                    explore.xpath('.//progress/text()')[0], ),
-        if explore.xpath('explore/lvup/text()')[0] == '1':
-            print 'level up!'
-        else:
-            print "%sexp to go." % explore.xpath('explore/next_exp/text()')[0]
+        while ma.ap >= ap_limit:
+            explore = ma.explore(area_id, floor_id)
+            print "exp+%s gold+%s=%s progress:%s%%" % (explore.xpath('.//get_exp/text()')[0],
+                                                        explore.xpath('.//gold/text()')[0], ma.gold,
+                                                        explore.xpath('.//progress/text()')[0], ),
+            if explore.xpath('explore/lvup/text()')[0] == '1':
+                print 'level up!'
+            else:
+                print "%sexp to go." % explore.xpath('explore/next_exp/text()')[0]
 
-        # event
-        if explore.xpath('./explore/fairy') and build_roundtable():
-            print "find a fairy: %s lv%s" % (explore.xpath('.//fairy/name/text()')[0], explore.xpath('.//fairy/lv/text()')[0])
-            ma.fairy_battle(explore.xpath('.//fairy/serial_id/text()')[0], explore.xpath('.//fairy/discoverer_id/text()')[0])
-            touched_fairy.add(explore.xpath('.//fairy/serial_id/text()')[0])
-        if explore.xpath('./explore/next_floor') and explore.xpath('.//next_floor//boss_id/text()')[0] == '0':
-            floor_id = int(explore.xpath('.//next_floor/floor_info/id/text()')[0])
-            floor_cost = int(explore.xpath('.//next_floor/floor_info/cost/text()')[0])
-            print "goto next floor:%s cost:%s" % (floor_id, floor_cost)
-        if explore.xpath('./explore/user_card'):
-            print "got a card"
+            # event
+            if explore.xpath('./explore/fairy') and build_roundtable():
+                print "find a fairy: %s lv%s" % (explore.xpath('.//fairy/name/text()')[0], explore.xpath('.//fairy/lv/text()')[0])
+                ma.fairy_battle(explore.xpath('.//fairy/serial_id/text()')[0], explore.xpath('.//fairy/discoverer_id/text()')[0])
+                touched_fairy.add(explore.xpath('.//fairy/serial_id/text()')[0])
+            if explore.xpath('./explore/next_floor') and explore.xpath('.//next_floor//boss_id/text()')[0] == '0':
+                floor_id = int(explore.xpath('.//next_floor/floor_info/id/text()')[0])
+                floor_cost = int(explore.xpath('.//next_floor/floor_info/cost/text()')[0])
+                print "goto next floor:%s cost:%s" % (floor_id, floor_cost)
+            if explore.xpath('./explore/user_card'):
+                print "got a card"
+            time.sleep(10)
 
 if __name__ == '__main__':
     while True:
