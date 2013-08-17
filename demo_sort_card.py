@@ -24,7 +24,7 @@ def sort_card(by, limit=20, reverse=True):
 if __name__ == '__main__':
     import sys
     by = 'cp'
-    limit = 20
+    limit = 50
     for key in sys.argv[1:]:
         if key.isdigit():
             limit = int(key)

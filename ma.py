@@ -6,6 +6,7 @@
 # Created on 2013-08-05 23:58:01
 
 import re
+import time
 import random
 import config
 import requests
@@ -93,6 +94,16 @@ class MA:
     def level(self):
         return self.town_level
 
+    @property
+    def ap(self):
+        now = time.time()
+        return self._ap + int((now - self.ap_last_update_time) / self.ap_interval_time)
+
+    @property
+    def bc(self):
+        now = time.time()
+        return self._bc + int((now - self.bc_last_update_time) / self.bc_interval_time)
+
     def abs_path(self, path):
         if path.startswith('~'):
             path = path.replace('~', self.HOME)
@@ -132,13 +143,15 @@ class MA:
                     setattr(self, attr, make_up(data[0]))
 
             if your_data.xpath('./ap'):
-                self.ap = int(your_data.xpath('./ap/current/text()')[0])
+                self._ap = int(your_data.xpath('./ap/current/text()')[0])
                 self.ap_max = int(your_data.xpath('./ap/max/text()')[0])
                 self.ap_interval_time = int(your_data.xpath('./ap/interval_time/text()')[0])
+                self.ap_last_update_time = int(your_data.xpath('./ap/last_update_time/text()')[0])
             if your_data.xpath('./bc'):
-                self.bc = int(your_data.xpath('./bc/current/text()')[0])
+                self._bc = int(your_data.xpath('./bc/current/text()')[0])
                 self.bc_max = int(your_data.xpath('./bc/max/text()')[0])
                 self.bc_interval_time = int(your_data.xpath('./bc/interval_time/text()')[0])
+                self.bc_last_update_time = int(your_data.xpath('./bc/last_update_time/text()')[0])
 
             if your_data.xpath('./owner_card_list'):
                 self.cards = {}

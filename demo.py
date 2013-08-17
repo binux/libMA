@@ -12,8 +12,8 @@ import ma as _ma
 
 FAIRY_BATTLE_COOLDOWN = 20
 KEEP_FAIRY = 10*60
-SLEEP_TIME = 3*60
-KEEP_BC = 150
+SLEEP_TIME = 60
+KEEP_BC = 160
 touched_fairy = set()
 
 area_id = sys.argv[1] if len(sys.argv) > 1 else None
@@ -23,9 +23,10 @@ def main():
     ma = _ma.MA()
     ma.login(config.loginId, config.password)
     assert ma.islogin
+    ma.my_fairy = False
 
     def build_roundtable():
-        if ma.bc - ma.cost > KEEP_BC:
+        if ma.bc - ma.cost > KEEP_BC and not ma.my_fairy:
             top_cards = []
             top_card_masters = set()
             for card in sorted(ma.cards.values(),
@@ -102,11 +103,31 @@ def main():
                                                      fairy_event.xpath('fairy/lv/text()')[0],
                                                      fairy_event.xpath('user/name/text()')[0])
                 try:
-                    ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
+                    battle = ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
+                    result = []
+                    fairy = battle.xpath('//battle_vs_info/player')[1]
+                    result.append('%s HP:%s ATK:%s -' % (fairy.xpath('name/text()')[0], fairy_info.xpath('//fairy/hp/text()')[0],
+                                                         fairy.xpath('.//power/text()')[0]))
+                    if battle.xpath('//battle_result/winner/text()')[0] != '0':
+                        result.append('WINNER!')
+                    damage = 0
+                    for action in battle.xpath('//battle_action_list'):
+                        if action.xpath('attack_damage') and action.xpath('action_player/text()')[0] == '0':
+                            damage += int(action.xpath('attack_damage//text()')[0])
+
+                    result.append('damage:%s' % damage)
+                    result.append('exp+%s' % (int(battle.xpath('//battle_result/before_exp/text()')[0]) \
+                                            - int(battle.xpath('//battle_result/after_exp/text()')[0])))
+                    result.append('gold+%s' % (int(battle.xpath('//battle_result/after_gold/text()')[0]) \
+                                            - int(battle.xpath('//battle_result/before_gold/text()')[0])))
+                    result.append('bikini+%s' % (int(battle.xpath('//battle_result/special_item/after_count/text()')[0]) \
+                                            - int(battle.xpath('//battle_result/special_item/before_count/text()')[0])))
+                    print ' '.join(result)
                 except _ma.HeaderError, e:
                     if e.code != 8000:
                         raise
                     time.sleep(10)
+                    continue
                 time.sleep(FAIRY_BATTLE_COOLDOWN) # waiting for cooldown? got a can't raise battle error
                 
         # explore
@@ -117,12 +138,14 @@ def main():
         if ma.ap < ap_limit:
             print "waiting for ap, ap:%d/%d bc:%d/%d" % (ma.ap, ma.ap_max, ma.bc, ma.bc_max)
             time.sleep(SLEEP_TIME)
-            ma.mainmenu()
             continue
+
         while ma.ap >= ap_limit:
             explore = ma.explore(area_id, floor_id)
-            print "exp+%s gold+%s=%s progress:%s%%" % (explore.xpath('.//get_exp/text()')[0],
+            print "exp+%s gold+%s=%s bikini+%s progress:%s%%" % (explore.xpath('.//get_exp/text()')[0],
                                                         explore.xpath('.//gold/text()')[0], ma.gold,
+                                                        (int(battle.xpath('//special_item/after_count/text()')[0]) \
+                                                            - int(battle.xpath('//special_item/before_count/text()')[0])),
                                                         explore.xpath('.//progress/text()')[0], ),
             if explore.xpath('explore/lvup/text()')[0] == '1':
                 print 'level up!'
@@ -134,6 +157,8 @@ def main():
                 print "find a fairy: %s lv%s" % (explore.xpath('.//fairy/name/text()')[0], explore.xpath('.//fairy/lv/text()')[0])
                 ma.fairy_battle(explore.xpath('.//fairy/serial_id/text()')[0], explore.xpath('.//fairy/discoverer_id/text()')[0])
                 touched_fairy.add(explore.xpath('.//fairy/serial_id/text()')[0])
+                self.my_fairy = True
+                ap_limit = ma.ap_max - 20
                 time.sleep(FAIRY_BATTLE_COOLDOWN)
             if explore.xpath('./explore/next_floor') and explore.xpath('.//next_floor//boss_id/text()')[0] == '0':
                 floor_id = int(explore.xpath('.//next_floor/floor_info/id/text()')[0])
@@ -147,9 +172,11 @@ if __name__ == '__main__':
         try:
             main()
         except _ma.HeaderError, e:
-            print e.message, 'sleep for 10min'
+            print e.code, e.message, 'sleep for 10min'
             time.sleep(10*60)
             continue
         except Exception, e:
             print e
+            time.sleep(60)
+            continue
             import IPython; IPython.embed()
