@@ -18,7 +18,9 @@ import requests
 import win32com.client
 from ctypes import windll
 
-INVITE = ''
+import config
+
+INVITE = '40e3f'
 
 def change_guid(guid=None):
     if not guid:
@@ -58,7 +60,7 @@ def find_window(title):
     return win32gui.GetWindowRect(hwnd)
 
 USERNAME=""
-PASSWORD=""
+PASSWORD=config.password
 PROJECT_ID=125
 def get_tel_f02():
     ret = requests.get("http://f02.cn/httpUserGetMobileAction.do?userID=%s&password=%s&size=1&projectID=%s" % (USERNAME, PASSWORD, PROJECT_ID))
@@ -114,6 +116,38 @@ def get_sms_fq(mobile):
     code = m.group(0)
     return code
 
+tasoo = requests.Session()
+def get_tel_tasoo():
+    global tasoo
+    global mobile
+    ret = tasoo.post('http://www.tasoo.net/Handle/AjaxHandle.ashx?Type=Login', {
+        'uid': config.tasoo_uid,
+        'pwd': config.tasoo_pwd,
+        })
+    tasoo.cookies = ret.cookies
+    ret = tasoo.post('http://www.tasoo.net/Handle/CodeHandle.ashx?Type=GetPhone', {
+        'Phone': '',
+        'CategoryFlag': '0083',
+        'hold': 0,
+        })
+    assert '|' in ret.text, ret.text
+    mobile = ret.text.split('|')[0]
+    return mobile
+
+def get_sms_tasoo(mobile):
+    global tasoo
+    global code
+    ret = tasoo.post('http://www.tasoo.net/Handle/CodeHandle.ashx?Type=GetCode', {
+        'Phone': mobile,
+        'CategoryFlag': '0083',
+        'SuperiorID': '17958',
+        })
+    assert ret.text != 'not_msg', ret.text
+    m = re.search('\d{6}', ret.text)
+    assert m, ret.text
+    code = m.group(0)
+    return code
+
 def test():
     while True:
         hwnd = win32gui.GetForegroundWindow()
@@ -133,7 +167,8 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         test()
 
-    get_tel, get_sms = get_tel_fq, get_sms_fq
+    get_tel, get_sms = get_tel_tasoo, get_sms_tasoo
+    #get_tel, get_sms = get_tel_fq, get_sms_fq
     #get_tel, get_sms = get_tel_f02, get_sms_f02
 
     #get_tel()
