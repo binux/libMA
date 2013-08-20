@@ -7,6 +7,7 @@
 
 import re
 import time
+import json
 import random
 import config
 import requests
@@ -455,6 +456,38 @@ class MA:
     # error api?
     def fairy_win(self, serial_id, user_id):
         return self.get("~/exploration/fairy_win", serial_id=serial_id, user_id=user_id)
+
+
+    def _bind_data(self, phone, nickname, groupid=1):
+        return self.post('http://www.niuxba.com/ma/backend/cgi-bin/bindUser.php', data=json.dumps({
+            'phone': phone,
+            'nickName': nickname,
+            'groupId': groupid,
+            })).json
+
+    def _get_user_info(self, phone, userid, groupid=1, serverno=6):
+        return self.post('http://www.niuxba.com/ma/backend/cgi-bin/getUserInfo.php', data=json.dumps({
+            'phone': phone,
+            'groupId': groupid,
+            'serverNo': serverno,
+            'userId': userid,
+            })).json
+
+    def _get_card_info(self, phone, userid, groupid=1, serverno=6):
+        return self.post('http://www.niuxba.com/ma/backend/cgi-bin/getCardInfo.php', data=json.dumps({
+            'phone': phone,
+            'groupId': groupid,
+            'serverNo': serverno,
+            'userId': userid,
+            })).json
+
+    def _get_friend_info(self, phone, userid, groupid=1, serverno=6):
+        return self.post('http://www.niuxba.com/ma/backend/cgi-bin/getFriendInfo.php', data=json.dumps({
+            'phone': phone,
+            'groupId': groupid,
+            'serverNo': serverno,
+            'userId': userid,
+            })).json
 
 if __name__ == '__main__':
     ma = MA()

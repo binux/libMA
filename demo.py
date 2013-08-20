@@ -45,7 +45,7 @@ def main():
                 card_cost += card.cost
                 card_atk[(len(cards)-1)/3] += card.power
 
-                rounds = card_hp / atk
+                rounds = (card_hp / atk) + 1
                 damage = 0
                 card_rounds = len([x for x in card_atk if x > 0])
                 for i in range(rounds):
@@ -90,6 +90,12 @@ def main():
         elif ma.bc - ma.cost >= 0 and ma.cost <= 10:
             return True
         else:
+            best_cp_card = sorted(ma.cards.values(),
+                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True)[0]
+            if best_cp_card.cost < ma.bc:
+                print 'changing roundtable: %s' % best_cp_card
+                ma.save_deck_card([min_cost_card, ])
+                return True
             min_cost_card = sorted(ma.cards.values(),
                     key=lambda x: (x.cost, -(x.hp+x.power)))[0]
             if ma.bc < min_cost_card.cost:
