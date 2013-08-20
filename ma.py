@@ -165,7 +165,12 @@ class MA:
 
     def get(self, resource, params={}, **kwargs):
         kwargs.update(params) # params has a same object, don't update it
-        xml = etree.fromstring(self.cat(resource, params=kwargs))
+        data = self.cat(resource, params=kwargs)
+        try:
+            xml = etree.fromstring(data)
+        except Exception, e:
+            e.message = data
+            raise
         self.last_xml = xml
         if config.DEBUG:
             with open("resource/"+resource.replace('~/', '').replace('/', '_'), 'w') as fp:

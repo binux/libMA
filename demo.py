@@ -13,8 +13,9 @@ import ma as _ma
 FAIRY_BATTLE_COOLDOWN = 20
 KEEP_FAIRY = 10*60
 SLEEP_TIME = 60
-KEEP_BC = 160
+KEEP_BC = 80
 touched_fairy = set()
+atk_dict = {}
 
 area_id = sys.argv[1] if len(sys.argv) > 1 else None
 def main():
@@ -25,15 +26,50 @@ def main():
     assert ma.islogin
     ma.my_fairy = False
 
-    def build_roundtable():
-        if ma.bc - ma.cost > KEEP_BC and not ma.my_fairy:
+    def build_roundtable(kill=False, hp=0, atk=0):
+        if kill:
+            cards = []
+            card_masters = set()
+            card_hp = 0
+            card_cost = 0
+            card_atk = [0, 0, 0, 0]
+            for card in sorted(ma.cards.values(),
+                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True):
+                if len(cards) >= 12:
+                    break
+                if card.master_card_id in card_masters:
+                    continue
+                cards.append(card)
+                card_masters.add(card.master_card_id)
+                card_hp += card.hp
+                card_cost += card.cost
+                card_atk[(len(cards)-1)/3] += card.power
+
+                rounds = card_hp / atk
+                damage = 0
+                card_rounds = len([x for x in card_atk if x > 0])
+                for i in range(rounds):
+                    damage += card_atk[i%card_rounds]
+                if damage > hp and card_cost < ma.bc:
+                    print 'changing roundtable(hp:%d damage:%d):' % (card_hp, damage)
+                    for i, card in enumerate(cards):
+                        if i % 3 == 2:
+                            print card.name
+                        else:
+                            print card.name, '|', 
+                    print 
+                    ma.save_deck_card(cards)
+                    return True
+            return False
+        elif False and ma.bc - ma.cost > KEEP_BC and not ma.my_fairy:
             top_cards = []
             top_card_masters = set()
             for card in sorted(ma.cards.values(),
                     key=lambda x: (x.hp+x.power)/x.cost, reverse=True):
-                if card.master_card_id not in top_card_masters:
-                    top_cards.append(card)
-                    top_card_masters.add(card.master_card_id)
+                if card.master_card_id in top_card_masters:
+                    continue
+                top_cards.append(card)
+                top_card_masters.add(card.master_card_id)
 
             chose = 0
             while chose < 12:
@@ -88,26 +124,36 @@ def main():
                 ma.my_fairy = True
             if fairy_event.xpath('put_down/text()')[0] != '1':
                 continue
-            if ma.bc < KEEP_BC and fairy_event.xpath('fairy/serial_id/text()')[0] in touched_fairy:
+            if ma.bc - ma.cost < KEEP_BC and fairy_event.xpath('fairy/serial_id/text()')[0] in touched_fairy:
                 continue
 
             fairy_info = ma.fairy_floor(fairy_event.xpath('fairy/serial_id/text()')[0],
                             fairy_event.xpath('user/id/text()')[0])
+            serial_id = fairy_info.xpath('//fairy/serial_id/text()')[0]
+            fairy_name = '%slv%s' % (fairy_event.xpath('fairy/name/text()')[0],
+                               fairy_event.xpath('fairy/lv/text()')[0])
             if int(fairy_info.xpath('//fairy/hp/text()')[0]) <= 0:
                 continue
-            if ma.bc < KEEP_BC and ma.user_id in fairy_info.xpath('//attacker/user_id/text()'):
-                touched_fairy.add(fairy_info.xpath('//fairy/serial_id/text()')[0])
+            if ma.bc - ma.cost < KEEP_BC and ma.user_id in fairy_info.xpath('//attacker/user_id/text()'):
+                touched_fairy.add(serial_id)
                 continue
-            if build_roundtable():
-                print "touch fairy: %slv%s by %s" % (fairy_event.xpath('fairy/name/text()')[0],
-                                                     fairy_event.xpath('fairy/lv/text()')[0],
-                                                     fairy_event.xpath('user/name/text()')[0])
+
+            if time.time() - int(fairy_event.xpath('start_time/text()')[0]) > 15*60 and atk_dict.get(fairy_name):
+                ret = build_roundtable(kill=True,
+                        hp=int(fairy_info.xpath('//fairy/hp/text()')[0]),
+                        atk=atk_dict[fairy_name])
+            else:
+                ret = build_roundtable()
+            if ret:
+                print "touch fairy: %s by %s" % (fairy_name, fairy_event.xpath('user/name/text()')[0])
                 try:
-                    battle = ma.fairy_battle(fairy_event.xpath('fairy/serial_id/text()')[0], fairy_event.xpath('user/id/text()')[0])
+                    battle = ma.fairy_battle(serial_id, fairy_event.xpath('user/id/text()')[0])
+                    # battle log
                     result = []
                     fairy = battle.xpath('//battle_vs_info/player')[1]
-                    result.append('%s HP:%s ATK:%s -' % (fairy.xpath('name/text()')[0], fairy_info.xpath('//fairy/hp/text()')[0],
+                    result.append('%s HP:%s ATK:%s -' % (fairy_name, fairy_info.xpath('//fairy/hp/text()')[0],
                                                          fairy.xpath('.//power/text()')[0]))
+                    atk_dict[fairy_name] = int(fairy.xpath('.//power/text()')[0])
                     if battle.xpath('//battle_result/winner/text()')[0] != '0':
                         result.append('WINNER!')
                     damage = 0
@@ -142,11 +188,11 @@ def main():
 
         while ma.ap >= ap_limit:
             explore = ma.explore(area_id, floor_id)
-            print "exp+%s gold+%s=%s bikini+%s progress:%s%%" % (explore.xpath('.//get_exp/text()')[0],
+            bikini = explore.xpath('//special_item') and \
+                        int(explore.xpath('//special_item/before_count/text()')[0]) or 0
+            print "exp+%s gold+%s=%s bikini=%s progress:%s%%" % (explore.xpath('.//get_exp/text()')[0],
                                                         explore.xpath('.//gold/text()')[0], ma.gold,
-                                                        (int(battle.xpath('//special_item/after_count/text()')[0]) \
-                                                            - int(battle.xpath('//special_item/before_count/text()')[0])),
-                                                        explore.xpath('.//progress/text()')[0], ),
+                                                        bikini, explore.xpath('.//progress/text()')[0], ),
             if explore.xpath('explore/lvup/text()')[0] == '1':
                 print 'level up!'
             else:
@@ -173,10 +219,12 @@ if __name__ == '__main__':
             main()
         except _ma.HeaderError, e:
             print e.code, e.message, 'sleep for 10min'
+            import traceback; traceback.print_exc()
             time.sleep(10*60)
             continue
         except Exception, e:
-            print e
+            print e.message, 'sleep for 60sec'
+            import traceback; traceback.print_exc()
             time.sleep(60)
             continue
             import IPython; IPython.embed()
