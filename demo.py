@@ -13,7 +13,7 @@ import ma as _ma
 FAIRY_BATTLE_COOLDOWN = 20
 KEEP_FAIRY = 10*60
 SLEEP_TIME = 60
-KEEP_BC = 80
+KEEP_BC = 160
 touched_fairy = set()
 atk_dict = {}
 
