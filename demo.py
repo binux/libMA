@@ -93,7 +93,7 @@ def main():
             best_cp_card = sorted(ma.cards.values(),
                     key=lambda x: (x.hp+x.power)/x.cost, reverse=True)[0]
             if best_cp_card.cost < ma.bc:
-                print 'changing roundtable: %s' % best_cp_card
+                print 'changing roundtable: %s' % best_cp_card.name
                 ma.save_deck_card([best_cp_card, ])
                 return True
             min_cost_card = sorted(ma.cards.values(),
