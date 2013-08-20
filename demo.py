@@ -141,7 +141,7 @@ def main():
             if time.time() - int(fairy_event.xpath('start_time/text()')[0]) > 15*60 and atk_dict.get(fairy_name):
                 ret = build_roundtable(kill=True,
                         hp=int(fairy_info.xpath('//fairy/hp/text()')[0]),
-                        atk=atk_dict[fairy_name])
+                        atk=atk_dict[fairy_name]) or build_roundtable()
             else:
                 ret = build_roundtable()
             if ret:
