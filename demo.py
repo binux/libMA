@@ -144,7 +144,7 @@ def main():
                 touched_fairy.add(serial_id)
                 continue
 
-            if time.time() - int(fairy_event.xpath('start_time/text()')[0]) > 15*60 and atk_dict.get(fairy_name):
+            if time.time() - int(fairy_event.xpath('start_time/text()')[0]) > 15*60 and atk_dict.get(fairy_name) and not ma.my_fairy:
                 ret = build_roundtable(kill=True,
                         hp=int(fairy_info.xpath('//fairy/hp/text()')[0]),
                         atk=atk_dict[fairy_name]) or build_roundtable()
