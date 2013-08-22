@@ -61,7 +61,7 @@ def main():
                     ma.save_deck_card(cards)
                     return True
             return False
-        elif False and ma.bc - ma.cost > KEEP_BC and not ma.my_fairy:
+        elif ma.bc - ma.cost > KEEP_BC and not ma.my_fairy:
             top_cards = []
             top_card_masters = set()
             for card in sorted(ma.cards.values(),
@@ -184,7 +184,7 @@ def main():
                 
         # explore
         if ma.my_fairy:
-            ap_limit = ma.ap_max - 20
+            ap_limit = ma.ap_max - 1
         else:
             ap_limit = ma.ap_max / 2
         if ma.ap < ap_limit:

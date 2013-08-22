@@ -59,25 +59,22 @@ def find_window(title):
     win32gui.SetForegroundWindow(hwnd)
     return win32gui.GetWindowRect(hwnd)
 
-USERNAME=""
 PASSWORD=config.password
 PROJECT_ID=125
 def get_tel_f02():
-    ret = requests.get("http://f02.cn/httpUserGetMobileAction.do?userID=%s&password=%s&size=1&projectID=%s" % (USERNAME, PASSWORD, PROJECT_ID))
+    ret = requests.get("http://f02.cn/httpUserGetMobileAction.do?userID=%s&password=%s&size=1&projectID=%s" % (config.f02_username, config.f02_password, PROJECT_ID))
     lines = ret.text.splitlines()
     assert lines[0].strip() == '111', ret.text
     return lines[1].strip()
 
 def get_sms_f02(mobile):
-    ret = requests.get("http://f02.cn/httpGetCodeAction.do?userID=%s&password=%s&projectID=%s&mobile=%s" % (USERNAME, PASSWORD, PROJECT_ID, mobile))
+    ret = requests.get("http://f02.cn/httpGetCodeAction.do?userID=%s&password=%s&projectID=%s&mobile=%s" % (config.f02_username, config.f02_password, PROJECT_ID, mobile))
     lines = ret.text.splitlines()
     assert lines[0].strip() == '111', ret.text
     assert lines[1].split(';')[0] == mobile, ret.text
     return lines[1].split(';')[1].strip()
 
 token = None
-uid = ''
-pwd = ''
 pid = 292
 def get_tel_fq():
     global tel
@@ -85,14 +82,14 @@ def get_tel_fq():
     if not token:
         ret = requests.post("http://sms.xudan123.com/do.aspx", {
             'action': 'loginIn',
-            'uid': uid,
-            'pwd': pwd,
+            'uid': config.fq_uid,
+            'pwd': config.fq_pwd,
             })
         token = ret.text.split('|')[1].strip()
     ret = requests.post("http://sms.xudan123.com/do.aspx", {
         'action': 'getMobilenum',
         'pid': 292,
-        'uid': uid,
+        'uid': config.fq_uid,
         'token': token,
         })
     assert ret.text != 'no_data', ret.text
@@ -105,7 +102,7 @@ def get_sms_fq(mobile):
     ret = requests.post("http://sms.xudan123.com/do.aspx", {
         'action': 'getVcodeAndReleaseMobile',
         'mobile': mobile,
-        'uid': uid,
+        'uid': config.fq_uid,
         'token': token,
         'author_uid': 'binux',
         })
