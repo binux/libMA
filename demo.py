@@ -124,7 +124,7 @@ def main():
 
     while True:
         # check fairy
-        KEEP_BC = ma.max_bc - 1
+        KEEP_BC = ma.bc_max - 1
         ma.my_fairy = False
         for fairy_event in ma.fairy_select().xpath('//fairy_event'):
             if fairy_event.xpath('user/id/text()') == ma.user_id:
