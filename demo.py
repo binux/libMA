@@ -61,7 +61,7 @@ def main():
                     ma.save_deck_card(cards)
                     return True
             return False
-        elif ma.bc - ma.cost > KEEP_BC and not ma.my_fairy:
+        elif ma.bc > KEEP_BC and not ma.my_fairy:
             top_cards = []
             top_card_masters = set()
             for card in sorted(ma.cards.values(),
@@ -124,6 +124,7 @@ def main():
 
     while True:
         # check fairy
+        KEEP_BC = ma.max_bc - 1
         ma.my_fairy = False
         for fairy_event in ma.fairy_select().xpath('//fairy_event'):
             if fairy_event.xpath('user/id/text()') == ma.user_id:
@@ -176,7 +177,7 @@ def main():
                                             - int(battle.xpath('//battle_result/special_item/before_count/text()')[0])))
                     print ' '.join(result)
                 except _ma.HeaderError, e:
-                    if e.code != 8000:
+                    if e.code not in (8000, 1010):
                         raise
                     time.sleep(10)
                     continue
