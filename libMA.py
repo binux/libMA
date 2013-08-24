@@ -124,8 +124,8 @@ class Fairy(BaseObject):
     def _update(self, data):
         if not self._data:
             self._data = data
-            self.id = data.fairy.serial_id
-            self.name = data.fairy.name
+            self.fairyid = data.fairy.serial_id
+            self.fairyname = data.fairy.name
             self.lavel = data.fairy.lv
             self.timeleft = data.fairy.time_limit
             self.status = data.put_down
@@ -137,7 +137,7 @@ class Fairy(BaseObject):
         if True or not self._cache:
             #print "fetch fairy detail",self.id,self.playerid
             params = {
-                "serial_id": self.id,
+                "serial_id": self.fairyid,
                 "user_id": self.playerid,
                 "check": "1",
             }
@@ -160,7 +160,7 @@ class Fairy(BaseObject):
 
     def attack(self):
         params = {
-            "serial_id": self.id,
+            "serial_id": self.fairyid,
             "user_id": self.playerid,
         }
         data = self.get("exploration/fairybattle/", params)
@@ -170,8 +170,9 @@ class Area(BaseObject):
     
     def _update(self, data):
         if not self._data:
+            data = UUObject(data)
             self.areaid = data.id
-            self.name = data.name
+            self.areaname = data.name
             self.progress = [data.prog_area, data.prog_item]
             self.type = data.area_type
             self.cost = data.cost
