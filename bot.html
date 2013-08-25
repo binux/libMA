@@ -32,11 +32,11 @@
     }
     function login(form) {
       if (window.ws) {
-        window.ws.close();
+        ws.close();
       }
       var login_id = form.id.value,
           password = form.pwd.value;
-      window.ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password);
+      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password);
       ws.onopen = function() {
         log.innerHTML += "<br />connected.";
       };

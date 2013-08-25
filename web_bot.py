@@ -16,9 +16,20 @@ from bot import Bot
 
 connected = 0
 class WebSocketBot(Bot):
+    master_cards = {}
     def __init__(self, ws):
         self.ws = ws
         Bot.__init__(self)
+
+    def login(self, login_id, password):
+        self.ma.login(login_id, password)
+        assert self.ma.islogin, 'login error!'
+        if not self.__class__.master_cards:
+            self.ma.masterdata_card()
+            self.__class__.master_cards = self.ma.master_cards
+        else:
+            self.ma.master_cards = self.__class__.master_cards
+        self.ma.roundtable_edit()
 
     def __del__(self):
         global connected
@@ -33,7 +44,8 @@ def websocket_app(environ, start_response):
     request = Request(environ)
     if request.path == '/bot' and 'wsgi.websocket' in environ:
         connected += 1
-        print "conn+%s=%d %s" % (environ['REMOTE_ADDR'], connected, environ['HTTP_USER_AGENT'])
+        print "conn+%s=%d %s" % (environ.get('X-Real-IP') or environ['REMOTE_ADDR'],
+                                 connected, environ['HTTP_USER_AGENT'])
         ws = environ["wsgi.websocket"]
         login_id = request.GET['id']
         password = request.GET['password']
