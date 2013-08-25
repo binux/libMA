@@ -37,6 +37,10 @@ class Bot(object):
                 if area.prog_area < 100:
                     area_id = area.id
                     break
+        else:
+            for area in areas.xpath('//area_info'):
+                if area.id == area_id:
+                    break
         self.area_id = area_id
 
         floors = self.ma.floor(area_id).xpath('//floor_info') 
