@@ -28,6 +28,8 @@ class Bot(object):
 
     def choose_area(self, area_id=None):
         areas = self.ma.area()
+        for area in areas.xpath('//area_info'):
+            self._print('%s %s %s' % (area.id, area.name, area.prog_area))
         if area_id and str(area_id) not in areas.xpath('//area_info/id/text()'):
             area_id = None
         if not area_id:
@@ -178,11 +180,12 @@ class Bot(object):
             time.sleep(self.SLEEP_TIME)
 
 if __name__ == '__main__':
+    import sys
     import config
     bot = Bot()
     while True:
         try:
-            bot.run(config.loginId, config.password)
+            bot.run(config.loginId, config.password, sys.argv[1] if len(sys.argv) > 1 else None)
         except ma.HeaderError, e:
             print e.code, e.message, 'sleep for 10min'
             import traceback; traceback.print_exc()
