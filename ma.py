@@ -203,7 +203,7 @@ class MA:
 
     def login(self, login_id, password):
         body = self.get("~/login", login_id=login_id, password=password)
-        self.user_id = (body.xpath('./login/user_id/text()') or [None, ])[0]
+        self.user_id = body.login.user_id
         return body
 
     def masterdata_card(self):
@@ -448,6 +448,7 @@ class MA:
             3 - got card
             5 - next floor
             15 - got card and autocomp
+            19 - bikini
         '''
         return self.get("~/exploration/explore", area_id=area_id, floor_id=floor_id, auto_build=auto_build)
 
