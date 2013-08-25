@@ -11,7 +11,7 @@ import json
 import random
 import config
 import requests
-from lxml import etree
+from lxml import objectify, etree
 from urlparse import urljoin
 from HttpUtils import _cryptParams
 from CryptUtils import crypt
@@ -58,7 +58,7 @@ class Card:
     @classmethod
     def from_xml(cls, card):
         c = cls()
-        for node in card:
+        for node in card.iterchildren():
             setattr(c, node.tag, int(node.text))
         return c
 
@@ -79,12 +79,14 @@ class MA:
             }
     HOME = 'connect/app'
     BASE_URL = config.BASE_URL
+    FAIRY_BATTLE_COOLDOWN = 20
 
     def __init__(self):
         self.device_id = ''.join([str(random.randint(0, 9)) for x in range(15)])
         self.session = requests.Session()
         self.session.headers.update(self.default_http_header)
         self.session_id = None
+        self.fairy_battle_cooldown = 0
         self.your_data = {}
 
     @property
@@ -168,7 +170,7 @@ class MA:
         kwargs.update(params) # params has a same object, don't update it
         data = self.cat(resource, params=kwargs)
         try:
-            xml = etree.fromstring(data)
+            xml = objectify.fromstring(data)
         except Exception, e:
             e.message = data
             raise
@@ -288,7 +290,9 @@ class MA:
         return self.get("~/menu/productlist", type=type)
 
     def fairy_select(self):
-        return self.get("~/menu/fairyselect")
+        ret = self.get("~/menu/fairyselect")
+        self.remaining_rewards = ret.fairy_select.remaining_rewards
+        return ret
 
     def ranking(self, ranktype_id=0, top=0, move=1):
         return self.get("~/ranking/ranking", ranktype_id=ranktype_id, top=top, move=move)
@@ -438,13 +442,24 @@ class MA:
         return self.get("~/exploration/get_floor", area_id=area_id, floor_id=floor_id, check=check)
 
     def explore(self, area_id, floor_id, auto_build=1):
+        '''
+        event:
+            2 - encounter
+            3 - got card
+            5 - next floor
+            15 - got card and autocomp
+        '''
         return self.get("~/exploration/explore", area_id=area_id, floor_id=floor_id, auto_build=auto_build)
 
     def fairy_floor(self, serial_id, user_id, check=1):
         return self.get("~/exploration/fairy_floor", serial_id=serial_id, user_id=user_id, check=1)
 
     def fairy_battle(self, serial_id, user_id):
-        return self.get("~/exploration/fairybattle", serial_id=serial_id, user_id=user_id)
+        if time.time() - self.fairy_battle_cooldown < self.FAIRY_BATTLE_COOLDOWN:
+            time.sleep(self.FAIRY_BATTLE_COOLDOWN - time.time() + self.fairy_battle_cooldown)
+        ret = self.get("~/exploration/fairybattle", serial_id=serial_id, user_id=user_id)
+        self.fairy_battle_cooldown = time.time()
+        return ret
 
     def fairy_history(self, serial_id, user_id):
         return self.get("~/exploration/fairyhistory", serial_id=serial_id, user_id=user_id)

@@ -127,10 +127,10 @@ def main():
         KEEP_BC = ma.bc_max - 1
         ma.my_fairy = False
         for fairy_event in ma.fairy_select().xpath('//fairy_event'):
-            if fairy_event.xpath('user/id/text()')[0] == ma.user_id:
-                ma.my_fairy = True
             if fairy_event.xpath('put_down/text()')[0] != '1':
                 continue
+            if fairy_event.xpath('user/id/text()')[0] == ma.user_id:
+                ma.my_fairy = True
             if ma.bc - ma.cost < KEEP_BC and fairy_event.xpath('fairy/serial_id/text()')[0] in touched_fairy:
                 continue
 
@@ -211,7 +211,7 @@ def main():
                 ma.fairy_battle(explore.xpath('.//fairy/serial_id/text()')[0], explore.xpath('.//fairy/discoverer_id/text()')[0])
                 touched_fairy.add(explore.xpath('.//fairy/serial_id/text()')[0])
                 ma.my_fairy = True
-                ap_limit = ma.ap_max - 20
+                ap_limit = ma.ap_max - 1
                 time.sleep(FAIRY_BATTLE_COOLDOWN)
             if explore.xpath('./explore/next_floor') and explore.xpath('.//next_floor//boss_id/text()')[0] == '0':
                 floor_id = int(explore.xpath('.//next_floor/floor_info/id/text()')[0])
