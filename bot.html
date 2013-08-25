@@ -42,10 +42,14 @@
       };
       ws.onclose = function() {
         log.innerHTML += "<br /><span class=error>disconnected.</span>";
+        login(form);
       };
       ws.onmessage = function(event) {
         log.innerHTML += "<br />"+event.data;
       };
+      submit.disabled = true;
+      login_form.id.disabled = true;
+      login_form.pwd.disabled = true;
       return false;
     }
   </script>
