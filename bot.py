@@ -122,7 +122,7 @@ class Bot(object):
             ret = False
             if self.ma.bc >= self.ma.bc_max - 1 \
                     and time.time() - fairy_event.start_time > self.KEEP_FAIRY_TIME \
-                    and (not self.my_fairy or self.my_fairy.discoverer_id == self.ma.user_id):
+                    and (not self.my_fairy or fairy.discoverer_id == self.ma.user_id):
                 ret = self.build_roundtable('kill') or self.build_roundtable('high_damage')
             if not ret:
                 ret = self.build_roundtable('low_cost')
@@ -167,9 +167,9 @@ class Bot(object):
                     self._print('got card: %s-%s%s' % (master_card['name'], master_card['rarity'],
                         ' (HOLO!)' if explore.user_card.holography else '' ))
 
-    def run(self, login_id, password):
+    def run(self, login_id, password, area=None):
         self.login(login_id, password)
-        self.choose_area()
+        self.choose_area(area)
         while True:
             self._print('current AP:%s/%s BC:%s/%s' % (self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max))
             self.fairy()

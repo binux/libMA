@@ -44,7 +44,7 @@ def websocket_app(environ, start_response):
     request = Request(environ)
     if request.path == '/bot' and 'wsgi.websocket' in environ:
         connected += 1
-        print "conn+%s=%d %s" % (environ.get('X-Real-IP') or environ['REMOTE_ADDR'],
+        print "conn+%s=%d %s" % (environ.get('HTTP_X_Real_IP') or environ['REMOTE_ADDR'],
                                  connected, environ['HTTP_USER_AGENT'])
         ws = environ["wsgi.websocket"]
         login_id = request.GET['id']
