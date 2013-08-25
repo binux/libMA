@@ -172,7 +172,7 @@ class Bot(object):
 
     def run(self, login_id, password, area=None):
         self.login(login_id, password)
-        self.choose_area(area)
+        self.choose_area(int(area))
         while True:
             self._print('current AP:%s/%s BC:%s/%s' % (self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max))
             self.fairy()
