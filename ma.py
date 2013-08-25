@@ -444,6 +444,7 @@ class MA:
     def explore(self, area_id, floor_id, auto_build=1):
         '''
         event:
+            1 - fairy
             2 - encounter
             3 - got card
             5 - next floor

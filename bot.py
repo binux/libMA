@@ -144,7 +144,7 @@ class Bot(object):
             
             bikini_str = ''
             if hasattr(explore, 'special_item') and explore.special_item.after_count:
-                bikini_str = ' bikini+%s=%s ' % (explore.special_item.after_count - explore.special_item.before_count,
+                bikini_str = 'bikini+%s=%s ' % (explore.special_item.after_count - explore.special_item.before_count,
                         explore.special_item.after_count)
             self._print('floor:%s event:%s exp-%s=%s%s glod+%s %sprogress=%s%%' % (
                 self.floor_id, explore.event_type, explore.get_exp, explore.next_exp,
