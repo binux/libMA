@@ -100,8 +100,9 @@ class Bot(object):
     def fairy(self):
         self.my_fairy = None
         for fairy_event in sorted(self.ma.fairy_select().xpath('//fairy_event'),
-                                key=lambda x: (x.fairy.serial_id not in self.touched_fairies, x.start_time,
-                                               x.fairy.lv, )):
+                                key=lambda x: (x.fairy.serial_id in self.touched_fairies,
+                                               x.user.id != self.ma.user_id,
+                                               x.start_time, x.fairy.lv, )):
             if fairy_event.put_down != 1: # killed
                 continue
             if fairy_event.user.id == self.ma.user_id:
