@@ -64,9 +64,8 @@ def websocket_app(environ, start_response):
                 continue
             except Exception, e:
                 import traceback; traceback.print_exc()
-                ws.send('%r %s' % (e, 'sleep for 1min'))
-                time.sleep(60)
-                continue
+                connected -= 1
+                break
     else:
         start_response("200 OK", [("Content-Type", "text/html")])
         return open("bot.html").readlines()
