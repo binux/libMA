@@ -44,8 +44,8 @@ def websocket_app(environ, start_response):
     request = Request(environ)
     if request.path == '/bot' and 'wsgi.websocket' in environ:
         connected += 1
-        print "conn+%s=%d %s" % (environ.get('HTTP_X_Real_IP') or environ['REMOTE_ADDR'],
-                                 connected, environ['HTTP_USER_AGENT'])
+        print "conn+%s=%d %s" % (environ.get('HTTP_X_REAL_IP', environ['REMOTE_ADDR']),
+                                 connected, environ.get('HTTP_USER_AGENT', '-'))
         ws = environ["wsgi.websocket"]
         login_id = request.GET['id']
         password = request.GET['password']
@@ -58,10 +58,12 @@ def websocket_app(environ, start_response):
                 print "current conn-1: %d" % connected
                 break
             except ma.HeaderError, e:
+                print e.code, e.message
                 ws.send('%s %s %s' % (e.code, e.message, 'sleep for 10min'))
                 time.sleep(10*60)
                 continue
             except Exception, e:
+                import traceback; traceback.print_exc()
                 ws.send('%r %s' % (e, 'sleep for 1min'))
                 time.sleep(60)
                 continue

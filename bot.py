@@ -176,7 +176,7 @@ class Bot(object):
 
     def run(self, login_id, password, area=None):
         self.login(login_id, password)
-        self.choose_area(int(area))
+        self.choose_area(area)
         while True:
             self._print('current AP:%s/%s BC:%s/%s' % (self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max))
             self.fairy()
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     bot = Bot()
     while True:
         try:
-            bot.run(config.loginId, config.password, sys.argv[1] if len(sys.argv) > 1 else None)
+            bot.run(config.loginId, config.password, int(sys.argv[1]) if len(sys.argv) > 1 else None)
         except ma.HeaderError, e:
             print e.code, e.message, 'sleep for 10min'
             import traceback; traceback.print_exc()
