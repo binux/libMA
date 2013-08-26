@@ -23,6 +23,7 @@ class Bot(object):
     def login(self, login_id, password):
         self.ma.login(login_id, password)
         assert self.ma.islogin, 'login error!'
+        self.ma.mainmenu()
         self.ma.masterdata_card()
         self.ma.roundtable_edit()
 
@@ -129,7 +130,7 @@ class Bot(object):
             ret = False
             if self.ma.bc >= self.ma.bc_max - 20 \
                     and time.time() - fairy_event.start_time > self.KEEP_FAIRY_TIME \
-                    and (not self.my_fairy or fairy.discoverer_id == self.ma.user_id):
+                    and (self.my_fairy is None or fairy.discoverer_id == self.ma.user_id):
                 ret = self.build_roundtable('kill') or self.build_roundtable('high_damage')
             if not ret:
                 ret = self.build_roundtable('low_cost')
@@ -178,10 +179,13 @@ class Bot(object):
         self.login(login_id, password)
         self.choose_area(area)
         while True:
-            self._print('%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s Fairy Reward:%s' % (
+            self._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s%s%s" % (
                 self.ma.name, self.ma.level, self.ma.percentage,
                 self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max,
-                self.ma.gold, len(self.ma.cards), getattr(self.ma, 'remaining_rewards', '-')))
+                self.ma.gold, len(self.ma.cards),
+                "Free Point:%s " % self.ma.free_ap_bc_point if self.ma.free_ap_bc_point else '',
+                "Fairy " if self.my_fairy else '',
+                "Reward:%s" % getattr(self.ma, 'remaining_rewards', '-')))
             self.fairy()
             self.explore()
             time.sleep(self.SLEEP_TIME)

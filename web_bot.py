@@ -14,17 +14,19 @@ from geventwebsocket.handler import WebSocketHandler
 from webob import Request
 from bot import Bot
 
-connected = 0
 class WebSocketBot(Bot):
     master_cards = {}
     SLEEP_TIME = 60
+    connected = 0
     def __init__(self, ws):
         self.ws = ws
+        self.__class__.connected += 1
         Bot.__init__(self)
 
     def login(self, login_id, password):
         self.ma.login(login_id, password)
         assert self.ma.islogin, 'login error!'
+        self.ma.mainmenu()
         if not self.__class__.master_cards:
             self.ma.masterdata_card()
             self.__class__.master_cards = self.ma.master_cards
@@ -33,24 +35,21 @@ class WebSocketBot(Bot):
         self.ma.roundtable_edit()
 
     def __del__(self):
-        global connected
-        connected -= 1
-        print "conn-1=%d" % connected
+        self.__class__.connected == 1
+        print "conn-1=%d" % self.connected
 
     def _print(self, message):
         self.ws.send(message)
 
 def websocket_app(environ, start_response):
-    global connected
     request = Request(environ)
     if request.path == '/bot' and 'wsgi.websocket' in environ:
-        connected += 1
-        print "conn+%s=%d %s" % (environ.get('HTTP_X_REAL_IP', environ['REMOTE_ADDR']),
-                                 connected, environ.get('HTTP_USER_AGENT', '-'))
         ws = environ["wsgi.websocket"]
         login_id = request.GET['id']
         password = request.GET['password']
         bot = WebSocketBot(ws)
+        print "conn+%s=%d %s" % (environ.get('HTTP_X_REAL_IP', environ['REMOTE_ADDR']),
+                                 WebSocketBot.connected, environ.get('HTTP_USER_AGENT', '-'))
         while True:
             try:
                 bot.run(login_id, password)
