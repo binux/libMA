@@ -92,7 +92,7 @@ class Bot(object):
             return False
         self.touched_fairies.add(serial_id)
         battle_result = battle.battle_result
-        self._print('hp:%s atk:%s damage:%s%s exp-%s=%s glod+%s=%s bikini+%s=%s' % (
+        self._print('hp:%s atk:%s damage:%s%s exp-%s=%s gold+%s=%s bikini+%s=%s' % (
                 battle.battle_battle.battle_player_list[1].hp, battle.battle_vs_info.player[1].user_card.power,
                 sum([x.attack_damage for x in battle.xpath('//battle_action_list') if \
                         hasattr(x, 'attack_damage') and x.action_player == 0]),
@@ -122,12 +122,12 @@ class Bot(object):
                 continue
             if str(self.ma.user_id) in fairy.xpath('//attacker/user_id/text()'):
                 self.touched_fairies.add(fairy.serial_id)
-                if self.ma.bc < self.ma.bc_max - 1:
+                if self.ma.bc < self.ma.bc_max - 20:
                     continue
 
             # strategy goes here
             ret = False
-            if self.ma.bc >= self.ma.bc_max - 1 \
+            if self.ma.bc >= self.ma.bc_max - 20 \
                     and time.time() - fairy_event.start_time > self.KEEP_FAIRY_TIME \
                     and (not self.my_fairy or fairy.discoverer_id == self.ma.user_id):
                 ret = self.build_roundtable('kill') or self.build_roundtable('high_damage')
@@ -140,7 +140,7 @@ class Bot(object):
 
     def explore(self):
         if self.my_fairy is not None:
-            ap_limit = self.ma.ap_max - 1
+            ap_limit = max(self.ma.ap_max - 20, 20)
         else:
             ap_limit = min(self.ma.ap_max / 2, 20)
         if self.ma.ap < ap_limit:
@@ -153,7 +153,7 @@ class Bot(object):
             if hasattr(explore, 'special_item') and explore.special_item.after_count:
                 bikini_str = 'bikini+%s=%s ' % (explore.special_item.after_count - explore.special_item.before_count,
                         explore.special_item.after_count)
-            self._print('floor:%s event:%s exp-%s=%s%s glod+%s %sprogress=%s%%' % (
+            self._print('floor:%s event:%s exp-%s=%s%s gold+%s %sprogress=%s%%' % (
                 self.floor_id, explore.event_type, explore.get_exp, explore.next_exp,
                 '(LVUP!)' if explore.lvup else '', explore.gold, bikini_str, explore.progress))
 
@@ -162,7 +162,7 @@ class Bot(object):
                 self._print('find fairy: %slv%s hp:%s' % (explore.fairy.name, explore.fairy.lv, explore.fairy.hp))
                 self.battle(explore.fairy.serial_id, explore.fairy.discoverer_id)
                 self.my_fairy = explore.fairy
-                ap_limit = self.ma.ap_max - 1
+                ap_limit = max(self.ma.ap_max - 20, 20)
             if explore.xpath('./next_floor') and explore.next_floor.floor_info.boss_id == 0:
                 self.floor_id = explore.next_floor.floor_info.id
                 self.floor_cost = explore.next_floor.floor_info.cost
@@ -178,7 +178,10 @@ class Bot(object):
         self.login(login_id, password)
         self.choose_area(area)
         while True:
-            self._print('current AP:%s/%s BC:%s/%s' % (self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max))
+            self._print('%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s Fairy Reward:%s' % (
+                self.ma.name, self.ma.level, self.ma.percentage,
+                self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max,
+                self.ma.gold, len(self.ma.cards), getattr(self.ma, 'remaining_rewards', '-')))
             self.fairy()
             self.explore()
             time.sleep(self.SLEEP_TIME)

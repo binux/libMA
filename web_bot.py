@@ -17,6 +17,7 @@ from bot import Bot
 connected = 0
 class WebSocketBot(Bot):
     master_cards = {}
+    SLEEP_TIME = 60
     def __init__(self, ws):
         self.ws = ws
         Bot.__init__(self)

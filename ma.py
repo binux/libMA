@@ -116,7 +116,9 @@ class MA:
         kwargs.update(params)
         params = _cryptParams(kwargs)
         response = self.session.post(self.abs_path(resource), params, params={"cyt": 1})
-        return crypt.decode(response.content)
+        data = crypt.decode(response.content)
+        data = re.sub("&(?!amp;)", "&amp;", data)
+        return data
 
     def parse_header(self, header):
         error_code = int(header.xpath('./error/code/text()')[0])
@@ -207,19 +209,7 @@ class MA:
         return body
 
     def masterdata_card(self):
-        resource = "~/masterdata/card/update"
-        data = self.cat(resource)
-        # fix format bug here
-        data = re.sub("&(?!amp;)", "&amp;", data)
-        xml = etree.fromstring(data)
-        self.last_xml = xml
-        if config.DEBUG:
-            with open("resource/"+resource.replace('~/', '').replace('/', '_'), 'w') as fp:
-                fp.write(etree.tostring(xml, pretty_print=True))
-
-        self.parse_header(xml.xpath('/response/header')[0])
-
-        body = xml.xpath('/response/body')[0]
+        body = self.get("~/masterdata/card/update")
 
         # save it
         self.master_cards = {}
