@@ -55,8 +55,6 @@ def websocket_app(environ, start_response):
             try:
                 bot.run(login_id, password)
             except WebSocketError, e:
-                connected -= 1
-                print "current conn-1: %d" % connected
                 break
             except ma.HeaderError, e:
                 print e.code, e.message
@@ -65,7 +63,6 @@ def websocket_app(environ, start_response):
                 continue
             except Exception, e:
                 import traceback; traceback.print_exc()
-                connected -= 1
                 break
     else:
         start_response("200 OK", [("Content-Type", "text/html")])
