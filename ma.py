@@ -66,11 +66,22 @@ class Card:
         self.ma = ma
         return self
 
+    @property
+    def master_card(self):
+        if hasattr(self.ma, 'master_cards') and self.__dict__['master_card_id'] in self.ma.master_cards:
+            self.master_card = self.ma.master_cards[self.master_card_id]
+            return self.master_card
+        raise Exception('no master card data. try load ma.masterdata_card() first')
+
     def __getattr__(self, key):
-        if self.ma and self.__dict__['master_card_id'] in self.ma.master_cards \
-                and key in self.ma.master_cards[self.master_card_id]:
-            return self.ma.master_cards[self.master_card_id][key]
+        if key in self.master_card:
+            return self.master_card[key]
         raise AttributeError(key)
+
+    def __eq__(self, other):
+        if self.serial_id == other.serial_id:
+            return True
+        return False
 
 class MA:
     default_http_header = {

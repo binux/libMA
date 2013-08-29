@@ -6,6 +6,7 @@
 # Created on 2013-08-24 17:46:08
 
 import ma
+import random
 import time
 
 class Bot(object):
@@ -16,6 +17,7 @@ class Bot(object):
         self.my_fairy = None
         self.fairy_battle_cool_down = 0
         self.touched_fairies = set()
+        self.atk_log = {}
 
     def _print(self, message):
         print message
@@ -50,11 +52,52 @@ class Bot(object):
         self.floor_id = floor.id
         self.floor_cost = floor.cost
 
+    def calc_atk(self, cards, fairy_atk):
+        hp = sum([x.hp for x in cards])
+        lines = (len(cards)-1)/3+1
+        atks = [sum([x.power for x in cards[i*3:i*3+3]]) for i in range(0, lines)]
+        rounds = hp / fairy_atk
+        atk = 0
+        for i in range(rounds):
+            atk += atks[i%lines]
+        return atk
+
     def build_roundtable(self, _type=None, **kwargs):
         if False:
             pass
         elif _type == 'kill':
-            return False
+            hp = kwargs.pop('hp')
+            atk = kwargs.pop('atk')
+            cards = []
+            masters = set()
+            for card in sorted(self.ma.cards.values(),
+                    key=lambda x: x.lv, reverse=True)[:50]:
+                if card.master_card_id in masters:
+                    continue
+                masters.add(card.master_card_id)
+                cards.append(card)
+
+            killed = False
+            best_cost = 999
+            best_cards = []
+            for ncards in [3, 6, 9, 12, ]:
+                if len(cards)-2 < ncards:
+                    break
+                for _ in range(min(100, len(cards)*ncards)):
+                    cards = list(best_cards) if best_cards else cards
+                    for _ in range(ncards*10):
+                        switch_a, switch_b = random.randint(0, ncards), random.randint(ncards+1, len(cards)-1)
+                        cards[switch_a], cards[switch_b] = cards[switch_b], cards[switch_a]
+                        cost = sum([x.cost for x in cards[:ncards]])
+                        if best_cost > cost and cost <= self.ma.bc and self.calc_atk(cards[:ncards], atk) >= hp:
+                            killed = True
+                            best_cards = list(cards)
+                            best_cost = cost
+                if killed:
+                    break
+            if not killed:
+                return False
+            cards = cards[:ncards]
         elif _type == 'high_damage':
             cards = []
             masters = set()
@@ -102,6 +145,7 @@ class Bot(object):
                 battle_result.after_gold-battle_result.before_gold, battle_result.after_gold,
                 battle_result.special_item.after_count-battle_result.special_item.before_count,
                 battle_result.special_item.after_count))
+        self.atk_log[battle.battle_battle.battle_player_list[1].maxhp] = battle.battle_vs_info.player[1].user_card.power
         return True
 
     def fairy(self):
@@ -131,7 +175,10 @@ class Bot(object):
             if self.ma.bc >= self.ma.bc_max - 20 \
                     and time.time() - fairy_event.start_time > self.KEEP_FAIRY_TIME \
                     and (self.my_fairy is None or fairy.discoverer_id == self.ma.user_id):
-                ret = self.build_roundtable('kill') or self.build_roundtable('high_damage')
+                ret = False
+                if self.atk_log.get(fairy.hp_max):
+                    ret = self.build_roundtable('kill', hp=fairy.hp, atk=self.atk_log[fairy.hp_max])
+                ret = ret or self.build_roundtable('high_damage')
             if not ret:
                 ret = self.build_roundtable('low_cost')
 

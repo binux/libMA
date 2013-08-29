@@ -16,13 +16,15 @@ from webob import Request
 from bot import Bot
 
 class WebSocketBot(Bot):
-    master_cards = {}
+    master_cards = {}   # shared master cards
+    atk_log = {}   # shared atk log
     SLEEP_TIME = 60
     connected = 0
     def __init__(self, ws):
         self.ws = ws
         self.__class__.connected += 1
         Bot.__init__(self)
+        self.atk_log = self.__class__.atk_log
 
     def login(self, login_id, password):
         self.ma.login(login_id, password)
