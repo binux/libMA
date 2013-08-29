@@ -7,6 +7,7 @@
 
 import ma
 import time
+import socket
 import gevent
 import gevent.monkey
 from geventwebsocket import WebSocketError
@@ -54,6 +55,8 @@ def websocket_app(environ, start_response):
             try:
                 bot.run(login_id, password)
             except WebSocketError, e:
+                break
+            except socket.error:
                 break
             except ma.HeaderError, e:
                 print e.code, e.message

@@ -184,7 +184,7 @@ class Bot(object):
                 self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max,
                 self.ma.gold, len(self.ma.cards),
                 "Free Point:%s " % self.ma.free_ap_bc_point if self.ma.free_ap_bc_point else '',
-                "Fairy " if self.my_fairy else '',
+                "Fairy " if self.my_fairy is not None else '',
                 "Reward:%s" % getattr(self.ma, 'remaining_rewards', '-')))
             self.fairy()
             self.explore()
