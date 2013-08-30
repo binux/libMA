@@ -53,14 +53,32 @@ class Bot(object):
         self.floor_cost = floor.cost
 
     def calc_atk(self, cards, fairy_atk):
-        hp = sum([x.hp for x in cards])
         lines = (len(cards)-1)/3+1
-        atks = [sum([x.power for x in cards[i*3:i*3+3]]) for i in range(0, lines)]
-        rounds = hp / fairy_atk
+        line_hp_combo = (lines-1)*0.03+1.1
+        hp_skill = sum([x.hp*0.2 for x in cards if x.skill_type==2])
+
+        hp = sum([x.hp for x in cards])*line_hp_combo+hp_skill
+        atks = [sum([x.power*1.2 if x.skill_type==1 else x.power
+                for x in cards[i*3:i*3+3]]) for i in range(0, lines)]
+        rounds = int(hp / fairy_atk - 0.00001) + 1
         atk = 0
         for i in range(rounds):
             atk += atks[i%lines]
         return atk
+
+    def adjust_card_order(self, cards):
+        lines = (len(cards)-1)/3+1
+        atk_cards = [x for x in cards if x.skill_type==1]
+        hp_cards = [x for x in cards if x.skill_type==2]
+        other_cards = [x for x in cards if x.skill_type not in (1, 2)]
+        _cards = atk_cards+other_cards+hp_cards
+        cards = []
+        for line in range(lines):
+            for i in range(3):
+                pos = lines*i+line
+                if pos < len(_cards):
+                    cards.append(_cards[pos])
+        return cards
 
     def build_roundtable(self, _type=None, **kwargs):
         if False:
@@ -71,7 +89,7 @@ class Bot(object):
             cards = []
             masters = set()
             for card in sorted(self.ma.cards.values(),
-                    key=lambda x: x.lv, reverse=True)[:50]:
+                    key=lambda x: x.hp*x.power, reverse=True)[:50]:
                 if card.master_card_id in masters:
                     continue
                 masters.add(card.master_card_id)
@@ -85,7 +103,7 @@ class Bot(object):
                     break
                 for _ in range(min(100, len(cards)*ncards)):
                     cards = list(best_cards) if best_cards else cards
-                    for _ in range(ncards*10):
+                    for _ in range(ncards*5):
                         switch_a, switch_b = random.randint(0, ncards), random.randint(ncards+1, len(cards)-1)
                         cards[switch_a], cards[switch_b] = cards[switch_b], cards[switch_a]
                         cost = sum([x.cost for x in cards[:ncards]])
@@ -120,7 +138,8 @@ class Bot(object):
         else:
             return False
 
-        if [x.serial_id for x in cards] != [x.serial_id for x in self.ma.roundtable]:
+        if cards != self.ma.roundtable:
+            cards = self.adjust_card_order(cards)
             self._print('changing roundtable: %s cost: %s' % (' | '.join([x.name for x in cards]),
                                                               sum([x.cost for x in cards])))
             self.ma.save_deck_card(cards)
@@ -224,6 +243,7 @@ class Bot(object):
 
     def run(self, login_id, password, area=None):
         self.login(login_id, password)
+        import IPython; IPython.embed(); return
         self.choose_area(area)
         while True:
             self._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s%s%s" % (
