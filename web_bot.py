@@ -40,7 +40,7 @@ class WebSocketBot(Bot):
         self.ma.roundtable_edit()
 
     def __del__(self):
-        self.__class__.connected == 1
+        self.__class__.connected -= 1
         print "conn-1=%d" % self.connected
 
     def _print(self, message):
