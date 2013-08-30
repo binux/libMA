@@ -243,7 +243,6 @@ class Bot(object):
 
     def run(self, login_id, password, area=None):
         self.login(login_id, password)
-        import IPython; IPython.embed(); return
         self.choose_area(area)
         while True:
             self._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s%s%s" % (
