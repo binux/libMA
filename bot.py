@@ -12,6 +12,8 @@ import time
 class Bot(object):
     SLEEP_TIME = 30
     KEEP_FAIRY_TIME = 15*60
+    CHOOSE_CARD_LIMIT = 50
+    NCARDS_LIMIT = [3, 6, 9, 12, ]
     def __init__(self):
         self.ma = ma.MA()
         self.my_fairy = None
@@ -54,7 +56,7 @@ class Bot(object):
 
     def calc_atk(self, cards, fairy_atk):
         lines = (len(cards)-1)/3+1
-        line_hp_combo = (lines-1)*0.03+1.1
+        line_hp_combo = (lines-1)*0.05+1
         hp_skill = sum([x.hp*0.2 for x in cards if x.skill_type==2])
 
         hp = sum([x.hp for x in cards])*line_hp_combo+hp_skill
@@ -88,8 +90,8 @@ class Bot(object):
             atk = kwargs.pop('atk')
             cards = []
             masters = set()
-            for card in sorted(self.ma.cards.values(),
-                    key=lambda x: x.hp*x.power, reverse=True)[:50]:
+            for card in sorted([x for x in self.ma.cards.values() if x.lv > 10],
+                    key=lambda x: x.hp*x.power, reverse=True)[:CHOOSE_CARD_LIMIT]:
                 if card.master_card_id in masters:
                     continue
                 masters.add(card.master_card_id)

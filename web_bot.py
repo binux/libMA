@@ -16,9 +16,11 @@ from webob import Request
 from bot import Bot
 
 class WebSocketBot(Bot):
+    SLEEP_TIME = 60
+    CHOOSE_CARD_LIMIT = 30
+    NCARDS_LIMIT = [3, 6, ]
     master_cards = {}   # shared master cards
     atk_log = {}   # shared atk log
-    SLEEP_TIME = 60
     connected = 0
     def __init__(self, ws):
         self.ws = ws
