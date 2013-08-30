@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <title>MA Bot</title>
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <meta name="description" content="ma bot">
+    <meta name="author" content="binux">
+  </head>
+
+  <body>
+    <section id=login>
+      <form id=login_form onsubmit="return login(this);">
+        login_id: <input name=id />
+        password: <input type=password name=pwd />
+        <input id=submit type=submit value=login />
+      </form>
+    </section>
+    <section id=log>
+    </section>
+  </body>
+
+  <script>
+    if (window.WebSocket === undefined) {
+      submit.disabled = true;
+      login_form.id.disabled = true;
+      login_form.pwd.disabled = true;
+      log.innerHTML += "<br />WebSocket not supported. Using Chrome!";
+    }
+    function login(form) {
+      if (window.ws) {
+        ws.close();
+      }
+      var login_id = form.id.value,
+          password = form.pwd.value;
+      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password);
+      ws.onopen = function() {
+        log.innerHTML += "<br />connected.";
+      };
+      ws.onclose = function() {
+        log.innerHTML += "<br /><span class=error>disconnected.</span>";
+        setTimeout(function() { login(form); }, 60*1000);
+      };
+      ws.onmessage = function(event) {
+        log.innerHTML += "<br />"+event.data;
+      };
+      submit.disabled = true;
+      login_form.id.disabled = true;
+      login_form.pwd.disabled = true;
+      return false;
+    }
+  </script>
+</html>
+<!-- vim: set et sw=2 ts=2 sts=2 ff=unix fenc=utf8: -->
+

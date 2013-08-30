@@ -243,7 +243,6 @@ if __name__ == "__main__":
     print user.ap
     floor.explore()
     print user.ap
-    #fairylist = user.getFairyList()
-    #fairys = list_findall(fairylist, lambda x:x.isalive() and not x.isattacked())
-    #map(lambda x:x.attack(),fairys)
-    
+    fairylist = user.getFairyList()
+    fairy = list_find(fairylist, lambda x:x.isalive() and not x.isattacked())
+
