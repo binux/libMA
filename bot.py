@@ -91,7 +91,7 @@ class Bot(object):
             cards = []
             masters = set()
             for card in sorted([x for x in self.ma.cards.values() if x.lv > 10],
-                    key=lambda x: x.hp*x.power, reverse=True)[:CHOOSE_CARD_LIMIT]:
+                    key=lambda x: x.hp*x.power, reverse=True)[:self.CHOOSE_CARD_LIMIT]:
                 if card.master_card_id in masters:
                     continue
                 masters.add(card.master_card_id)
@@ -100,7 +100,7 @@ class Bot(object):
             killed = False
             best_cost = 999
             best_cards = []
-            for ncards in [3, 6, 9, 12, ]:
+            for ncards in self.NCARDS_LIMIT:
                 if len(cards)-2 < ncards:
                     break
                 for _ in range(min(100, len(cards)*ncards)):

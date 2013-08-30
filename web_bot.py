@@ -58,15 +58,15 @@ def websocket_app(environ, start_response):
         while True:
             try:
                 bot.run(login_id, password)
-            except WebSocketError, e:
-                break
-            except socket.error:
-                break
             except ma.HeaderError, e:
                 print e.code, e.message
                 ws.send('%s %s %s' % (e.code, e.message, 'sleep for 10min'))
                 time.sleep(10*60)
                 continue
+            except WebSocketError, e:
+                break
+            except socket.error:
+                break
             except Exception, e:
                 import traceback; traceback.print_exc()
                 break
