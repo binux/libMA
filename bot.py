@@ -17,7 +17,6 @@ class Bot(object):
     def __init__(self):
         self.ma = ma.MA()
         self.my_fairy = None
-        self.fairy_battle_cool_down = 0
         self.touched_fairies = set()
         self.atk_log = {}
 
@@ -25,6 +24,8 @@ class Bot(object):
         print message
 
     def login(self, login_id, password):
+        self.ma.check_inspection()
+        self.ma.notification_post_devicetoken(login_id, password)
         self.ma.login(login_id, password)
         assert self.ma.islogin, 'login error!'
         self.ma.mainmenu()

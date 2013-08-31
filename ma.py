@@ -5,12 +5,16 @@
 #         http://binux.me
 # Created on 2013-08-05 23:58:01
 
+import os
 import re
 import time
 import json
 import random
 import config
+import hashlib
+import tempfile
 import requests
+from os.path import join as path_join
 from lxml import objectify, etree
 from urlparse import urljoin
 from HttpUtils import _cryptParams
@@ -25,10 +29,10 @@ class HeaderError(Exception):
         return "HeaderError(code=%r, message=%r)" % (self.code, self.message)
 
     def __str__(self):
-        return self.message.encode('utf8')
+        return '%s %s' % (self.code, self.message.encode('utf8'))
 
     def __unicode__(self):
-        return self.message
+        return '%s %s' % (self.code, self.message)
 
 class Card:
     """
@@ -90,14 +94,14 @@ class MA:
             }
     HOME = 'connect/app'
     BASE_URL = config.BASE_URL
-    FAIRY_BATTLE_COOLDOWN = 20
+    BATTLE_COOLDOWN = 20
 
     def __init__(self):
         self.device_id = ''.join([str(random.randint(0, 9)) for x in range(15)])
         self.session = requests.Session()
         self.session.headers.update(self.default_http_header)
         self.session_id = None
-        self.fairy_battle_cooldown = 0
+        self.battle_cooldown = 0
         self.your_data = {}
 
     @property
@@ -133,11 +137,25 @@ class MA:
 
     def parse_header(self, header):
         error_code = int(header.xpath('./error/code/text()')[0])
-        if error_code:
-            self.session_id = None
-            raise HeaderError(error_code, unicode(header.xpath('./error/message/text()')[0]))
+        if error_code == 1010:
+            error_message = unicode(header.xpath('./error/message/text()')[0])
+            self.last_message = error_message
+        elif error_code:
+            error_message = unicode(header.xpath('./error/message/text()')[0])
+            raise HeaderError(error_code, error_message)
 
         self.session_id = header.xpath('./session_id/text()')[0]
+
+        revision = header.xpath('./revision')
+        if revision:
+            self.revision = {}
+            revision = revision[0]
+            for attr in ('card_rev', 'boss_rev', 'item_rev', 'card_category_rev', 'gacha_rev',
+                         'privilege_rev', 'combo_rev', 'eventbanner_rev'):
+                data = revision.xpath('./%s/text()' % attr)
+                if data:
+                    self.revision[attr] = int(data[0])
+                         
 
         your_data = header.xpath('./your_data')
         if your_data:
@@ -189,21 +207,31 @@ class MA:
             raise
         self.last_xml = xml
         if config.DEBUG:
+            xml_str = etree.tostring(xml, pretty_print=True)
             with open("resource/"+resource.replace('~/', '').replace('/', '_'), 'w') as fp:
-                fp.write(etree.tostring(xml, pretty_print=True))
+                fp.write(xml_str)
 
         self.parse_header(xml.xpath('/response/header')[0])
 
-        return xml.xpath('/response/body')[0]
+        body = xml.xpath('/response/body')[0]
+        if config.DEBUG:
+            print etree.tostring(body, pretty_print=True)
+        return body
 
     def wordlist(self):
         return self.session.post("http://dlc.game-CBT.ma.sdo.com:50005/world_list.php", data={"data_str": '{"device_id":"'+self.device_id+'"}'}).json
 
+    # http://push.mam.sdo.com:8000/active.php
+
     def check_inspection(self):
         return self.cat("~/check_inspection")
 
-    def notification_post_devicetoken(self, login_id, password, token=config.deviceToken, S="nosessionid"):
-        return self.cat("~/notification/post_devicetoken", login_id=login_id, password=password, token=token, S=S) 
+    def notification_post_devicetoken(self, login_id, password, app="and", token=None, S="nosessionid"):
+        login_id = str(login_id)
+        if token == None:
+            token = hashlib.md5(hashlib.sha1(login_id+password).hexdigest()).hexdigest()
+        return self.cat("~/notification/post_devicetoken", login_id=login_id, password=password, app=app,
+                token=token.encode("base64").replace("\n", ""), S=S) 
 
     def regist(self, login_id, password, invitation_id, platform=2, device_id=None):
         if device_id is None:
@@ -218,6 +246,17 @@ class MA:
         body = self.get("~/login", login_id=login_id, password=password)
         self.user_id = body.login.user_id
         return body
+
+    def masterdata_boss(self, S, revision):
+        return self.get("~/masterdata/boss/update", S=S, revision=revision)
+
+    def masterdata_card_category(self, S, revision):
+        return self.get("~/masterdata/card_category/update", S=S, revision=revision)
+
+    @property
+    def master_cards(self):
+        self.masterdata_card()
+        return self.master_cards
 
     def masterdata_card(self):
         body = self.get("~/masterdata/card/update")
@@ -262,13 +301,21 @@ class MA:
     def other_list(self):
         return self.get("~/menu/other_list")
 
+    def player_search(self, name):
+        return self.get("~/menu/player_search", name=name)
+
     def rewardbox(self):
         return self.get("~/menu/rewardbox")
 
     def get_rewards(self, notice_id):
         if isinstance(notice_id, list):
-            return ",".join(map(str, notice_id))
-        return self.get("~/menu/get_rewards", notice_id=notice_id)
+            notice_id = ",".join(map(str, notice_id))
+        try:
+            return self.get("~/menu/get_rewards", notice_id=notice_id)
+        except HeaderError, e:
+            if e.code in (8000, 1010):
+                return self.last_xml.xpath('/response/body')[0]
+
 
     def goodlist(self, user_id=None):
         if not user_id:
@@ -312,20 +359,23 @@ class MA:
     def lvup_status(self):
         return self.get("~/town/lvup_status")
 
-    def pointsetting(self, ap, bc):
+    def pointsetting(self, ap=0, bc=0):
         return self.get("~/town/pointsetting", ap=ap, bc=bc)
 
     def card_exchange(self, mode=1):
         return self.get("~/card/exchange", mode=mode)
 
     def card_compound(self, base_serial_id, add_serial_id):
+        if isinstance(base_serial_id, Card):
+            base_serial_id = base_serial_id.serial_id
         if isinstance(add_serial_id, list):
-            return ",".join(map(str, add_serial_id))
+            add_serial_id = ",".join(map(lambda x: str(x.serial_id) if isinstance(x, Card) else str(x),
+                add_serial_id))
         return self.get("~/compound/buildup/compound", base_serial_id=base_serial_id, add_serial_id=add_serial_id)
 
     def card_sell(self, serial_id):
         if isinstance(serial_id, list):
-            return ",".join(map(str, serial_id))
+            serial_id = ",".join(map(str, serial_id))
         return self.get("~/trunk/sell", serial_id=serial_id)
 
 
@@ -338,6 +388,12 @@ class MA:
         if isinstance(user_id, list):
             users = ",".join(map(str, user_id))
         return self.get("~/friend/add_friend", user_id=user_id, dialog=dialog)
+
+    def approve_friend(self, user_id, dialog=1):
+        return self.get("~/friend/approve_friend", user_id=user_id, dialog=dialog)
+
+    def refuse_friend(self, user_id, dialog=1):
+        return self.get("~/friend/refuse_friend", user_id=user_id, dialog=dialog)
 
     def cancel_apply(self, user_id, dialog=1):
         if isinstance(user_id, list):
@@ -426,11 +482,18 @@ class MA:
     def battle_area(self):
         return self.get("~/battle/area")
 
+    def competition_parts(self):
+        return self.get("~/battle/competition_parts")
+
     def battle_userlist(self, knight_id=0, move=1, parts_id=0):
         return self.get("~/battle/battle_userlist", knight_id=knight_id, move=move, parts_id=parts_id)
 
     def battle_battle(self, user_id, lake_id=0, parts_id=0):
-        return self.get("~/battle/battle", user_id=user_id, lake_id=lake_id, parts_id=parts_id)
+        if time.time() - self.battle_cooldown < self.BATTLE_COOLDOWN:
+            time.sleep(self.BATTLE_COOLDOWN - time.time() + self.battle_cooldown)
+        ret = self.get("~/battle/battle", user_id=user_id, lake_id=lake_id, parts_id=parts_id)
+        self.battle_cooldown = time.time()
+        return ret
 
 
     def area(self):
@@ -458,10 +521,10 @@ class MA:
         return self.get("~/exploration/fairy_floor", serial_id=serial_id, user_id=user_id, check=1)
 
     def fairy_battle(self, serial_id, user_id):
-        if time.time() - self.fairy_battle_cooldown < self.FAIRY_BATTLE_COOLDOWN:
-            time.sleep(self.FAIRY_BATTLE_COOLDOWN - time.time() + self.fairy_battle_cooldown)
+        if time.time() - self.battle_cooldown < self.BATTLE_COOLDOWN:
+            time.sleep(self.BATTLE_COOLDOWN - time.time() + self.battle_cooldown)
         ret = self.get("~/exploration/fairybattle", serial_id=serial_id, user_id=user_id)
-        self.fairy_battle_cooldown = time.time()
+        self.battle_cooldown = time.time()
         return ret
 
     def fairy_history(self, serial_id, user_id):
@@ -509,5 +572,7 @@ class MA:
 
 if __name__ == '__main__':
     ma = MA()
+    ma.check_inspection()
+    ma.notification_post_devicetoken(config.loginId, config.password)
     login = ma.login(config.loginId, config.password)
     import IPython; IPython.embed()

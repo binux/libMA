@@ -14,7 +14,7 @@ class StickyMaster(controller.Master):
     def handle_request(self, msg):
         if ".ma." in msg.get_url():
             path = msg.path.rsplit("?")[0]
-            print """
+            print """---------------------------            
     def %s(%s):
         return self.get(%s)""" % (path.split("/")[-1],
                                   ", ".join(["self", ] + msg.get_form_urlencoded().keys()),
@@ -29,6 +29,7 @@ class StickyMaster(controller.Master):
                     print "\t%s=%s" % (key, crypt.decode64(value))
             except:
                 print "\tdecode error!"
+            print
         msg.reply()
 
 if __name__ == '__main__':
