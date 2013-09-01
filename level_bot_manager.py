@@ -51,6 +51,13 @@ def _run_task(account):
     if account['status'] == 'DONE':
         return True
 
+    bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
+                bot.ma.name, bot.ma.level, bot.ma.percentage,
+                bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
+                bot.ma.gold, len(bot.ma.cards),
+                "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
+                ))
+
     # add friend
     friends = accountdb.find_friends()
     for i in range(bot.ma.friend_max - bot.ma.friends):
@@ -72,12 +79,6 @@ def _run_task(account):
     bot._print('battle: %s palyers found' % len(battle_list))
 
     for cur in battle_list:
-        bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
-                    bot.ma.name, bot.ma.level, bot.ma.percentage,
-                    bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
-                    bot.ma.gold, len(bot.ma.cards),
-                    "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
-                    ))
         if account['id'] in stop_set:
             stop_set.remove(account['id'])
             bot._print('stoped!')
@@ -106,6 +107,13 @@ def _run_task(account):
             bot.free_point()
         if bot.ma.bc < bot.ma.cost:
             bot.task_no_bc_action()
+
+    bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
+                bot.ma.name, bot.ma.level, bot.ma.percentage,
+                bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
+                bot.ma.gold, len(bot.ma.cards),
+                "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
+                ))
 
     account['lv'] = bot.ma.level
     account['friends'] = bot.ma.friends
