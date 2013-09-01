@@ -60,7 +60,8 @@ def _run_task(account):
 
     # add friend
     if bot.ma.friend_max > bot.ma.friends:
-        friends = random.shuffle(list(accountdb.find_friends()))
+        friends = list(accountdb.find_friends())
+        random.shuffle(friends)
     else:
         friends = []
     for cur in friends:
