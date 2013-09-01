@@ -16,11 +16,14 @@ class LevelBot(Bot):
         self.ma = ma.MA()
         self.story_blocked = False
 
-    def login(self, login_id, password):
+    def login(self, login_id, password, server=None):
         self.login_id = login_id
         self.ma.check_inspection()
         self.ma.notification_post_devicetoken(login_id, password)
-        self.ma.login(login_id, password)
+        if server:
+            self.ma.login(login_id, password, server)
+        else:
+            self.ma.login(login_id, password)
         assert self.ma.islogin, 'login error!'
         self.ma.mainmenu()
         self.ma.roundtable_edit()

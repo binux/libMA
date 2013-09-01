@@ -39,7 +39,10 @@ stop_set = set()
 running_set = set()
 def _run_task(account):
     bot = WebLevelBot()
-    bot.login(account['id'], account['pwd'])
+    if '|2' in account['invite']:
+        bot.login(account['id'], account['pwd'], 'http://game2-CBT.ma.sdo.com:10001')
+    else:
+        bot.login(account['id'], account['pwd'])
     account['name'] = bot.ma.name
     account['uid'] = int(bot.ma.user_id)
     account['lv'] = bot.ma.level

@@ -23,10 +23,13 @@ class Bot(object):
     def _print(self, message):
         print message
 
-    def login(self, login_id, password):
+    def login(self, login_id, password, server=None):
         self.ma.check_inspection()
         self.ma.notification_post_devicetoken(login_id, password)
-        self.ma.login(login_id, password)
+        if server:
+            self.ma.login(login_id, password, server)
+        else:
+            self.ma.login(login_id, password)
         assert self.ma.islogin, 'login error!'
         self.ma.mainmenu()
         self.ma.masterdata_card()

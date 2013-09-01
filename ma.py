@@ -218,8 +218,8 @@ class MA:
             print etree.tostring(body, pretty_print=True)
         return body
 
-    def wordlist(self):
-        return self.session.post("http://dlc.game-CBT.ma.sdo.com:50005/world_list.php", data={"data_str": '{"device_id":"'+self.device_id+'"}'}).json
+    def worldlist(self):
+        return self.session.post("http://dlc.game-CBT.ma.sdo.com:50005/world_list.php", data={"data_str": '{"device_id":"'+self.device_id+'"}'}).json()
 
     # http://push.mam.sdo.com:8000/active.php
 
