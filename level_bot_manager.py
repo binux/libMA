@@ -133,6 +133,7 @@ def run_task(account):
     if account['id'] in running_set:
         return
     print 'running account:', account['id']
+    account['rounds'] += 1
     account['status'] = 'RUNNING'
     accountdb.update(**account)
     running_set.add(account['id'])
@@ -156,7 +157,6 @@ def run_task(account):
     finally:
         running_set.remove(account['id'])
         if account['status'] not in ('FAILED', 'DONE'):
-            account['rounds'] += 1
             account['status'] = 'PENDING'
             accountdb.update(**account)
     print 'finished account:', account['id']
