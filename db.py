@@ -16,7 +16,7 @@ class AccountDB(basedb.BaseDB):
         cursor = self.conn.cursor()
         cursor.execute('''CREATE TABLE IF NOT EXISTS `%s` (
                 id PRIMARY KEY,
-                uid, pwd, name, lv, status, target_lv, rounds, intime, nextime, friends, friend_max
+                uid, pwd, name, lv, status, target_lv, rounds, intime, nextime, friends, friend_max, invite
                 )'''
                 % self.__tablename__)
         self.conn.commit()
@@ -29,7 +29,7 @@ class AccountDB(basedb.BaseDB):
     def dbcur(self):
         return self.conn.cursor()
 
-    def add(self, _id, pwd, status='PENDING', target_lv=25):
+    def add(self, _id, pwd, status='PENDING', target_lv=25, group=None):
         self._replace(self.__tablename__,
                 id = _id,
                 uid = 0,
@@ -41,20 +41,24 @@ class AccountDB(basedb.BaseDB):
                 intime = time.time(),
                 friends = 20,
                 friend_max = 20,
-                nextime = 0)
+                nextime = 0,
+                invite=group)
         self.conn.commit()
 
     def scan(self, status):
         return self._select2dic(self.__tablename__,
                 where="status='%s'" % status)
+        self.conn.commit()
 
     def find_friends(self):
         return self._select2dic(self.__tablename__,
                 where="friend_max - friends > 0")
+        self.conn.commit()
 
     def get(self, _id):
         ret = self._select2dic(self.__tablename__,
                 where="id='%d'" % int(_id), limit=1)
+        self.conn.commit()
         if ret:
             return ret[0]
         else:
@@ -73,23 +77,25 @@ class BattleDB(basedb.BaseDB):
         cursor = self.conn.cursor()
         cursor.execute('''CREATE TABLE IF NOT EXISTS `%s` (
                 uid INTEGER PRIMARY KEY,
-                name, hp, atk, deck_rank
+                name, hp, atk, deck_rank, level, leader_card
                 )'''
                 % self.__tablename__)
     @property
     def dbcur(self):
         return self.conn.cursor()
 
-    def add(self, _id, hp=999999, atk=999999, deck_rank=100):
-        self._replace(self.__tablename__, uid=int(_id), hp=hp, atk=atk, deck_rank=deck_rank)
+    def add(self, _id, name=None, hp=999999, atk=999999, deck_rank=100, level=4, leader_card=None):
+        self._replace(self.__tablename__, uid=int(_id), name=name, hp=hp, atk=atk, deck_rank=deck_rank,
+                      level=level, leader_card=leader_card)
         self.conn.commit()
 
     def update(self, id, hp, atk):
         self._update(self.__tablename__, "uid=%d" % int(id), hp=hp, atk=atk)
         self.conn.commit()
 
-    def scan(self):
-        return self._select2dic(self.__tablename__)
+    def scan(self, offset=0):
+        return self._select2dic(self.__tablename__, offset=offset)
+        self.conn.commit()
 
 accountdb = AccountDB()
 battledb = BattleDB()

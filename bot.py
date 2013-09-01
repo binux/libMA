@@ -138,6 +138,11 @@ class Bot(object):
             if self.ma.bc < min_cost_card.cost:
                 return False
             cards = [min_cost_card, ]
+        elif _type == 'battle':
+            cards = sorted([x for x in self.ma.cards.values() if x.hp>700 and x.power>500],
+                        key=lambda x: (x.cost, -x.hp*x.power))[:1]
+            if not cards:
+                return False
         else:
             return False
 
