@@ -52,7 +52,7 @@ class AccountDB(basedb.BaseDB):
 
     def find_friends(self):
         return self._select2dic(self.__tablename__,
-                where="friend_max - friends > 0")
+                where="status != 'FAILED' and status != 'DONE' and friend_max - friends > 0")
         self.conn.commit()
 
     def get(self, _id):

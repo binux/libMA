@@ -50,6 +50,8 @@ def _run_task(account):
     bot.task_check()
     if account['status'] == 'DONE':
         return True
+
+    # add friend
     friends = accountdb.find_friends()
     for i in range(bot.ma.friend_max - bot.ma.friends):
         try:
@@ -62,6 +64,7 @@ def _run_task(account):
     if not bot.build_roundtable('battle'):
         bot._print('build battle roundtalbe failed!')
         return True
+
     offset = random.randint(0, 500)
     while bot.ma.bc >= bot.ma.cost:
         bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
@@ -78,7 +81,7 @@ def _run_task(account):
                 offset += 1
                 if int(cur['uid']) % 2 != account['rounds'] % 2:
                     continue
-                if (bot.ma.roundtable[0].hp/cur['atk']*1.2+1)*bot.ma.roundtable[0].power < cur['hp']:
+                if (bot.ma.roundtable[0].hp/cur['atk']/1.2+1)*bot.ma.roundtable[0].power < cur['hp']:
                     continue
                 battle_list.append(cur)
                 if len(battle_list) > 50:
@@ -177,13 +180,13 @@ def web_app(environ, start_response):
         for cur in accountdb.scan('RUNNING'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
             cur['mnextime'] = cur['nextime'] - time.time()
-            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s'
-                    'rounds:%(rounds)s <a href="/stop?id=%(id)s">stop</a>"' % cur)
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s '
+                    'rounds:%(rounds)s <a href="/stop?id=%(id)s">stop</a>' % cur)
         content.append('<h1>PENDING</h1><hr />')
         for cur in accountdb.scan('PENDING'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
             cur['mnextime'] = cur['nextime'] - time.time()
-            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s'
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s '
                     'rounds:%(rounds)s %(mnextime)s <a href="/run?id=%(id)s&done=0">run</a> '
                     '<a href="/rm?id=%(id)s">del</a>' % cur)
         content.append('<h1>DONE</h1><hr />')
@@ -197,8 +200,8 @@ def web_app(environ, start_response):
         for cur in accountdb.scan('FAILED'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
             cur['mnextime'] = cur['nextime'] - time.time()
-            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s rounds:%(rounds)s '
-                           '<a href="/run?id=%(id)s&done=0">run</a>' % cur)
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s '
+                    'rounds:%(rounds)s <a href="/run?id=%(id)s&done=0">run</a>' % cur)
         # return 
         start_response("200 OK", [("Content-Type", "text/html")])
         return template % '\n'.join(content)
