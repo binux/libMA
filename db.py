@@ -48,7 +48,7 @@ class AccountDB(basedb.BaseDB):
 
     def find_friends(self):
         return self._select2dic(self.__tablename__,
-                where="status != 'FAILED' and status != 'DONE' and friend_max - friends > 0")
+                where="status != 'FAILED' and status != 'DONE' and friend_max > friends")
 
     def get(self, _id):
         ret = self._select2dic(self.__tablename__,

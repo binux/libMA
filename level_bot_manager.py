@@ -39,10 +39,7 @@ stop_set = set()
 running_set = set()
 def _run_task(account):
     bot = WebLevelBot()
-    if '|2' in account['invite']:
-        bot.login(account['id'], account['pwd'], 'http://game2-CBT.ma.sdo.com:10001')
-    else:
-        bot.login(account['id'], account['pwd'])
+    bot.login(account['id'], account['pwd'])
     account['name'] = bot.ma.name
     account['uid'] = int(bot.ma.user_id)
     account['lv'] = bot.ma.level
@@ -62,18 +59,23 @@ def _run_task(account):
                 ))
 
     # add friend
-    friends = accountdb.find_friends()
-    for i in range(bot.ma.friend_max - bot.ma.friends):
+    if bot.ma.friend_max > bot.ma.friends:
+        friends = random.shuffle(list(accountdb.find_friends()))
+    else:
+        friends = []
+    for cur in friends:
+        if not int(cur['uid']):
+            continue
+        if int(cur['uid']) == int(bot.ma.user_id):
+            continue
         try:
-            cur = friends.next()
-            if int(cur['uid']) == int(bot.ma.user_id):
-                cur = friends.next()
+            bot._print('add friend: %(name)s(%(uid)s)' % cur)
             bot.ma.add_friend(cur['uid'])
         except ma.HeaderError:
+            bot._print('add friend error: %(name)s(%(uid)s)' % cur)
             break
         except XMLSyntaxError:
-            break
-        except StopIteration:
+            bot._print('add friend error: %(name)s(%(uid)s)' % cur)
             break
 
     # battle
@@ -167,9 +169,13 @@ def run_task(account):
 def auto_start():
     while True:
         now = time.time()
+        cnt = 0
         for each in accountdb.scan('PENDING'):
             if each['nextime'] <= now:
+                cnt += 1
                 gevent.spawn(run_task, each)
+                if cnt > 5:
+                    break
         time.sleep(30)
 
 def web_app(environ, start_response):
@@ -209,7 +215,7 @@ def web_app(environ, start_response):
                     'rounds:%(rounds)s <a href="/run?id=%(id)s&done=0">run</a>' % cur)
         # return 
         start_response("200 OK", [("Content-Type", "text/html")])
-        return template % '\n'.join(content)
+        return template % '\n'.join([x.encode('utf8') for x in content])
     elif request.path == '/add':
         _id = request.GET['id']
         pwd = request.GET['pwd']
