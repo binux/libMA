@@ -90,8 +90,8 @@ def _run_task(account, battle_set):
     bot._print('battle: %s palyers found' % len(battle_list))
 
     for cur in battle_list:
-        if account['id'] in stop_set:
-            stop_set.remove(account['id'])
+        if int(account['id']) in stop_set:
+            stop_set.remove(int(account['id']))
             bot._print('stoped!')
             break
         if bot.ma.bc < bot.ma.cost:
@@ -138,13 +138,13 @@ def _run_task(account, battle_set):
 
 def run_task(account):
     account = dict(account)
-    if account['id'] in running_set:
+    if int(account['id']) in running_set:
         return
     print 'running account:', account['id']
     account['rounds'] += 1
     account['status'] = 'RUNNING'
     accountdb.update(**account)
-    running_set.add(account['id'])
+    running_set.add(int(account['id']))
     try:
         battle_set = set(map(int, account['battle'].split(','))) if account['battle'] else set()
         _run_task(account, battle_set)
@@ -166,9 +166,9 @@ def run_task(account):
     finally:
         if account['status'] not in ('FAILED', 'DONE'):
             account['status'] = 'PENDING'
-        account['battle'] = ','.join(battle_set)
+        account['battle'] = ','.join(map(str, battle_set))
         accountdb.update(**account)
-        running_set.remove(account['id'])
+        running_set.remove(int(account['id']))
         print 'finished account:', account['id']
 
 _quit = False
@@ -230,7 +230,7 @@ def web_app(environ, start_response):
         start_response("302 FOUND", [("Location", "/")])
         return 'redirect'
     elif request.path == '/stop':
-        _id = str(int(request.GET['id']))
+        _id = int(request.GET['id'])
         if _id in running_set:
             stop_set.add(_id)
             start_response("302 FOUND", [("Location", "/")])
@@ -277,9 +277,9 @@ def web_app(environ, start_response):
             return '404'
     elif request.path == '/quit':
         global _quit
-        global stop_set
         _quit = True
-        stop_set = running_set
+        for each in running_set:
+            stop_set.add(each)
     else:
         start_response("404 NOT FOUND", [])
         return '404'
