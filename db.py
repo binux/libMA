@@ -94,7 +94,7 @@ class BattleDB(basedb.BaseDB):
         self.conn.commit()
 
     def scan(self, offset=0):
-        return self._select2dic(self.__tablename__, offset=offset)
+        return self._select2dic(self.__tablename__, offset=offset, limit=200)
         self.conn.commit()
 
 accountdb = AccountDB()

@@ -71,6 +71,7 @@ def _run_task(account):
         try:
             battle = False
             battle_list = []
+            import IPython; IPython.embed()
             for cur in battledb.scan(offset):
                 offset += 1
                 if int(cur['uid']) % 2 != account['rounds'] % 2:
