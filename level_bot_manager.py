@@ -61,64 +61,50 @@ def _run_task(account):
             bot.ma.add_friend(cur['uid'])
         except StopIteration:
             break
+
+    # battle
     if not bot.build_roundtable('battle'):
         bot._print('build battle roundtalbe failed!')
         return True
+    battle_list = list(self.battledb.scan(where="uid%%4=%d%%4 and (hp-%d)*atk<%d*%d" % (account['rounds'],
+                                bot.ma.roundtable[0].power, bot.ma.roundtable[0].hp, bot.ma.roundtable[0].power)))
+    random.shuffle(battle_list)
 
-    offset = random.randint(0, 500)
-    while bot.ma.bc >= bot.ma.cost:
+    for cur in battle_list:
         bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
                     bot.ma.name, bot.ma.level, bot.ma.percentage,
                     bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
                     bot.ma.gold, len(bot.ma.cards),
                     "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
                     ))
+        if account['id'] in stop_set:
+            stop_set.remove(account['id'])
+            bot._print('stoped!')
+            break
+        if bot.ma.bc < bot.ma.cost:
+            break
 
         try:
-            battle = False
-            battle_list = []
-            for cur in battledb.scan(offset):
-                offset += 1
-                if int(cur['uid']) % 2 != account['rounds'] % 2:
-                    continue
-                if (bot.ma.roundtable[0].hp/cur['atk']/1.2+1)*bot.ma.roundtable[0].power < cur['hp']:
-                    continue
-                battle_list.append(cur)
-                if len(battle_list) > 20:
-                    break
-            if not battle_list:
+            hp, atk = bot.battle(cur['uid'])
+        except ma.HeaderError, e:
+            if e.code == 8000:
+                bot._print(e.message)
                 break
-            random.shuffle(battle_list)
-            battle = True
+            raise
+        except XMLSyntaxError, e:
+            bot._print('xml error')
+            time.sleep(2)
+            continue
+        if hp != cur['hp'] or atk != cur['atk']:
+            battledb.update(cur['uid'], hp, atk)
 
-            for cur in battle_list:
-                if bot.ma.bc < bot.ma.cost:
-                    break
-                if account['id'] in stop_set:
-                    stop_set.remove(account['id'])
-                    bot._print('stoped!')
-                    battle = False
-                    break
-                try:
-                    hp, atk = bot.battle(cur['uid'])
-                except ma.HeaderError, e:
-                    if e.code == 8000:
-                        bot._print('changing battle list(offset:%s): %s' % (offset, e.message))
-                        break
-                    raise
-                if hp != cur['hp'] or atk != cur['atk']:
-                    battledb.update(cur['uid'], hp, atk)
-
-            if not battle or bot.ma.bc < bot.ma.cost:
-                bot.task_no_bc_action()
+        if bot.ma.free_ap_bc_point:
             account['lv'] = bot.ma.level
             account['status'] = 'RUNNING'
             accountdb.update(**account)
-            if not battle:
-                break
-        except XMLSyntaxError, e:
-            bot._print('xml error')
-            continue
+            bot.free_point()
+        if bot.ma.bc < bot.ma.cost:
+            bot.task_no_bc_action()
 
     account['lv'] = bot.ma.level
     account['friends'] = bot.ma.friends

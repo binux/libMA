@@ -93,8 +93,8 @@ class BattleDB(basedb.BaseDB):
         self._update(self.__tablename__, "uid=%d" % int(id), hp=hp, atk=atk)
         self.conn.commit()
 
-    def scan(self, offset=0):
-        return self._select2dic(self.__tablename__, offset=offset, limit=200)
+    def scan(self, where):
+        return self._select2dic(self.__tablename__, where=where)
         self.conn.commit()
 
 accountdb = AccountDB()
