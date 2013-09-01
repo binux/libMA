@@ -80,10 +80,12 @@ def _run_task(account):
                 battle_list.append(cur)
                 if len(battle_list) > 50:
                     break
+            if not battle_list:
+                break
             random.shuffle(battle_list)
+            battle = True
             for cur in battle_list:
                 try:
-                    battle = True
                     hp, atk = bot.battle(cur['uid'])
                     if hp != cur['hp'] or atk != cur['atk']:
                         battledb.update(cur['uid'], hp, atk)
