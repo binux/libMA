@@ -84,7 +84,7 @@ def _run_task(account, battle_set):
         bot._print('build battle roundtalbe failed!')
         return True
     battle_list = list(battledb.scan(where="(cast(%d/atk/1.1 as int)+1)*%d>hp" % (
-        bot.ma.roundtable[0].hp, bot.ma.roundtable[0].hp)))
+        bot.ma.roundtable[0].hp, bot.ma.roundtable[0].atk)))
     battle_list = [x for x in battle_list if int(x['uid']) not in battle_set]
     random.shuffle(battle_list)
     bot._print('battle: %s palyers found' % len(battle_list))
