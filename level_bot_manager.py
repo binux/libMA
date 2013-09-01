@@ -66,7 +66,7 @@ def _run_task(account):
     if not bot.build_roundtable('battle'):
         bot._print('build battle roundtalbe failed!')
         return True
-    offset = random.randint(0, 1000)
+    offset = random.randint(0, 500)
     while bot.ma.bc >= bot.ma.cost:
         try:
             battle = False
@@ -91,7 +91,9 @@ def _run_task(account):
                         battledb.update(cur['uid'], hp, atk)
                 except ma.HeaderError, e:
                     if e.code == 8000:
+                        bot._print('changing battle list')
                         break
+                    raise
             if not battle or bot.ma.bc < bot.ma.cost:
                 bot.task_no_bc_action()
             if not battle:
@@ -100,6 +102,7 @@ def _run_task(account):
             account['status'] = 'RUNNING'
             accountdb.update(**account)
         except XMLSyntaxError, e:
+            bot._print('xml error')
             continue
 
     account['lv'] = bot.ma.level
