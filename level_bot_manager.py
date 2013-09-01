@@ -91,7 +91,6 @@ def _run_task(account):
         except ma.HeaderError, e:
             if e.code == 8000:
                 bot._print(e.message)
-                break
             raise
         except XMLSyntaxError, e:
             bot._print('xml error')
