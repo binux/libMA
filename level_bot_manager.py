@@ -69,6 +69,7 @@ def _run_task(account):
     battle_list = list(self.battledb.scan(where="uid%%4=%d%%4 and (hp-%d)*atk<%d*%d" % (account['rounds'],
                                 bot.ma.roundtable[0].power, bot.ma.roundtable[0].hp, bot.ma.roundtable[0].power)))
     random.shuffle(battle_list)
+    bot._print('battle: %s palyers found' % len(battle_list))
 
     for cur in battle_list:
         bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
