@@ -73,8 +73,8 @@ def _run_task(account):
     if not bot.build_roundtable('battle'):
         bot._print('build battle roundtalbe failed!')
         return True
-    battle_list = list(battledb.scan(where="uid%%4=%d%%4 and (hp-%d)*atk<%d*%d" % (account['rounds'],
-                                bot.ma.roundtable[0].power, bot.ma.roundtable[0].hp, bot.ma.roundtable[0].power)))
+    battle_list = list(battledb.scan(where="uid%%4=%d%%4 and (cast(%d/atk*1.1 as int)+1)*%d>hp" % (account['rounds'],
+                                bot.ma.roundtable[0].hp, bot.ma.roundtable[0].hp)))
     random.shuffle(battle_list)
     bot._print('battle: %s palyers found' % len(battle_list))
 
@@ -91,6 +91,8 @@ def _run_task(account):
         except ma.HeaderError, e:
             if e.code == 8000:
                 bot._print(e.message)
+                time.sleep(2)
+                continue
             raise
         except XMLSyntaxError, e:
             bot._print('xml error')
