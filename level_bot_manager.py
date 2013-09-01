@@ -70,9 +70,6 @@ def _run_task(account):
                     bot.ma.gold, len(bot.ma.cards),
                     "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
                     ))
-        if account['id'] in stop_set:
-            stop_set.remove(account['id'])
-            break
 
         try:
             battle = False
@@ -93,6 +90,11 @@ def _run_task(account):
 
             for cur in battle_list:
                 if bot.ma.bc < bot.ma.cost:
+                    break
+                if account['id'] in stop_set:
+                    stop_set.remove(account['id'])
+                    bot._print('stoped!')
+                    battle = False
                     break
                 try:
                     hp, atk = bot.battle(cur['uid'])
@@ -176,7 +178,7 @@ def web_app(environ, start_response):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
             cur['mnextime'] = cur['nextime'] - time.time()
             content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s'
-                    'rounds:%(rounds)s <a href="/stop?id=%(id)s>stop</a>"' % cur)
+                    'rounds:%(rounds)s <a href="/stop?id=%(id)s">stop</a>"' % cur)
         content.append('<h1>PENDING</h1><hr />')
         for cur in accountdb.scan('PENDING'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
