@@ -35,6 +35,7 @@ class WebLevelBot(LevelBot):
             fp.write(message.encode('utf8') if isinstance(message, unicode) else message)
             fp.write('\n')
 
+stop_set = set()
 def _run_task(account):
     bot = WebLevelBot()
     bot.login(account['id'], account['pwd'])
@@ -44,12 +45,6 @@ def _run_task(account):
     account['friends'] = bot.ma.friends
     account['friend_max'] = bot.ma.friend_max
     accountdb.update(**account)
-    bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
-                bot.ma.name, bot.ma.level, bot.ma.percentage,
-                bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
-                bot.ma.gold, len(bot.ma.cards),
-                "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
-                ))
 
     bot.task_check()
     if account['status'] == 'DONE':
@@ -68,6 +63,16 @@ def _run_task(account):
         return True
     offset = random.randint(0, 500)
     while bot.ma.bc >= bot.ma.cost:
+        bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
+                    bot.ma.name, bot.ma.level, bot.ma.percentage,
+                    bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
+                    bot.ma.gold, len(bot.ma.cards),
+                    "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
+                    ))
+        if account['id'] in stop_set:
+            stop_set.remove(account['id'])
+            break
+
         try:
             battle = False
             battle_list = []
@@ -84,23 +89,27 @@ def _run_task(account):
                 break
             random.shuffle(battle_list)
             battle = True
+
             for cur in battle_list:
+                if bot.ma.bc < bot.ma.cost:
+                    break
                 try:
                     hp, atk = bot.battle(cur['uid'])
-                    if hp != cur['hp'] or atk != cur['atk']:
-                        battledb.update(cur['uid'], hp, atk)
                 except ma.HeaderError, e:
                     if e.code == 8000:
                         bot._print('changing battle list(offset:%s): %s' % (offset, e.message))
                         break
                     raise
+                if hp != cur['hp'] or atk != cur['atk']:
+                    battledb.update(cur['uid'], hp, atk)
+
             if not battle or bot.ma.bc < bot.ma.cost:
                 bot.task_no_bc_action()
-            if not battle:
-                break
             account['lv'] = bot.ma.level
             account['status'] = 'RUNNING'
             accountdb.update(**account)
+            if not battle:
+                break
         except XMLSyntaxError, e:
             bot._print('xml error')
             continue
@@ -159,27 +168,30 @@ def web_app(environ, start_response):
                     '<pre>%s</pre></body></html>')
         content = []
         content.append('<h1>RUNNING</h1><hr />')
+        now = time.time()
         for cur in accountdb.scan('RUNNING'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
-            cur['mnextime'] = cur['nextime'] and datetime.datetime.fromtimestamp(cur['nextime'])
-            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s rounds:%(rounds)s' % cur)
+            cur['mnextime'] = cur['nextime'] - time.time()
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s'
+                    'rounds:%(rounds)s <a href="/stop?id=%(id)s>stop</a>"' % cur)
         content.append('<h1>PENDING</h1><hr />')
         for cur in accountdb.scan('PENDING'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
-            cur['mnextime'] = cur['nextime'] and datetime.datetime.fromtimestamp(cur['nextime'])
-            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s rounds:%(rounds)s '
-                           '%(mnextime)s <a href="/run?id=%(id)s&done=0">run</a>' % cur)
+            cur['mnextime'] = cur['nextime'] - time.time()
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s'
+                    'rounds:%(rounds)s %(mnextime)s <a href="/run?id=%(id)s&done=0">run</a> '
+                    '<a href="/rm?id=%(id)s">del</a>' % cur)
         content.append('<h1>DONE</h1><hr />')
         done = []
         for cur in accountdb.scan('DONE'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
-            cur['mnextime'] = cur['nextime'] and datetime.datetime.fromtimestamp(cur['nextime'])
+            cur['mnextime'] = cur['nextime'] - time.time()
             done.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s' % cur)
         content.append(' '.join(done))
         content.append('<h1>FAILED</h1><hr />')
         for cur in accountdb.scan('FAILED'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
-            cur['mnextime'] = cur['nextime'] and datetime.datetime.fromtimestamp(cur['nextime'])
+            cur['mnextime'] = cur['nextime'] - time.time()
             content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s rounds:%(rounds)s '
                            '<a href="/run?id=%(id)s&done=0">run</a>' % cur)
         # return 
@@ -190,6 +202,19 @@ def web_app(environ, start_response):
         pwd = request.GET['pwd']
         group = request.GET['group']
         accountdb.add(_id, pwd, group=group)
+        start_response("302 FOUND", [("Location", "/")])
+        return 'redirect'
+    elif request.path == '/stop':
+        _id = int(request.GET['id'])
+        stop_set.add(str(_id))
+        start_response("302 FOUND", [("Location", "/")])
+        return 'redirect'
+    elif request.path == '/rm':
+        _id = int(request.GET['id'])
+        data = accountdb.get(_id)
+        if data:
+            data['status'] = 'FAILED'
+            accountdb.update(**data)
         start_response("302 FOUND", [("Location", "/")])
         return 'redirect'
     elif request.path == '/run':

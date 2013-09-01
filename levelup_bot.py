@@ -107,13 +107,11 @@ class LevelBot(Bot):
         hp = 0
         atk = 0
         for card in enemy.xpath('.//card_list'):
-            if card.master_card_id == 390:
-                print '>>>>>>>>>>>>>>>', card.hp, card.power
             hp += card.hp
             atk += card.power
         exp_diff = ret.battle_result.before_exp - ret.battle_result.after_exp
-        self._print('battle with %s(%s): %s lv:%s exp-%s=%s(%s)' % (enemy.name, userid,
-            'win' if ret.battle_result.winner else 'lose', self.ma.level,
+        self._print('battle with %s(%s): %s lv:%s bc:%s exp-%s=%s(%s)' % (enemy.name, userid,
+            'win' if ret.battle_result.winner else 'lose', self.ma.level, self.ma.bc,
             exp_diff, ret.battle_result.after_exp, float(exp_diff)/self.ma.cost))
         return hp, atk
 
