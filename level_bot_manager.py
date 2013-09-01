@@ -91,7 +91,7 @@ def _run_task(account):
                         battledb.update(cur['uid'], hp, atk)
                 except ma.HeaderError, e:
                     if e.code == 8000:
-                        bot._print('changing battle list')
+                        bot._print('changing battle list(offset:%s): %s' % (offset, e.message))
                         break
                     raise
             if not battle or bot.ma.bc < bot.ma.cost:
@@ -160,19 +160,27 @@ def web_app(environ, start_response):
         content = []
         content.append('<h1>RUNNING</h1><hr />')
         for cur in accountdb.scan('RUNNING'):
-            content.append('<a href="/log?id=%(id)s">%(id)s</a> %(name)s lv:%(lv)s rounds:%(rounds)s' % cur)
+            cur['mintime'] = datetime.datetime(cur['intime'])
+            cur['mnextime'] = cur['nextime'] and datetime.datetime(cur['nextime'])
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a> %(name)s lv:%(lv)s rounds:%(rounds)s' % cur)
         content.append('<h1>PENDING</h1><hr />')
         for cur in accountdb.scan('PENDING'):
-            content.append('<a href="/log?id=%(id)s">%(id)s</a> %(name)s lv:%(lv)s rounds:%(rounds)s '
-                           '<a href="/run?id=%(id)s&done=0">run</a>' % cur)
+            cur['mintime'] = datetime.datetime(cur['intime'])
+            cur['mnextime'] = cur['nextime'] and datetime.datetime(cur['nextime'])
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a> %(name)s lv:%(lv)s rounds:%(rounds)s '
+                           '%(mnextime)s <a href="/run?id=%(id)s&done=0">run</a>' % cur)
         content.append('<h1>DONE</h1><hr />')
         done = []
         for cur in accountdb.scan('DONE'):
-            done.append('<a href="/log?id=%(id)s">%(id)s</a>' % cur)
+            cur['mintime'] = datetime.datetime(cur['intime'])
+            cur['mnextime'] = cur['nextime'] and datetime.datetime(cur['nextime'])
+            done.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>' % cur)
         content.append(' '.join(done))
         content.append('<h1>FAILED</h1><hr />')
         for cur in accountdb.scan('FAILED'):
-            content.append('<a href="/log?id=%(id)s">%(id)s</a> %(name)s lv:%(lv)s rounds:%(rounds)s '
+            cur['mintime'] = datetime.datetime(cur['intime'])
+            cur['mnextime'] = cur['nextime'] and datetime.datetime(cur['nextime'])
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a> %(name)s lv:%(lv)s rounds:%(rounds)s '
                            '<a href="/run?id=%(id)s&done=0">run</a>' % cur)
         # return 
         start_response("200 OK", [("Content-Type", "text/html")])
