@@ -36,6 +36,7 @@ class WebLevelBot(LevelBot):
             fp.write('\n')
 
 stop_set = set()
+running_set = set()
 def _run_task(account):
     bot = WebLevelBot()
     bot.login(account['id'], account['pwd'])
@@ -128,6 +129,7 @@ def run_task(account):
         print 'running account:', account['id']
         account['status'] = 'RUNNING'
         accountdb.update(**account)
+        running_set.add(account['id'])
         _run_task(account)
         account['nextime'] = time.time() + 60*60
     except ma.HeaderError, e:
@@ -145,6 +147,7 @@ def run_task(account):
     except XMLSyntaxError, e:
         account['nextime'] = time.time() + 3*60
     finally:
+        running_set.remove(account['id'])
         if account['status'] not in ('FAILED', 'DONE'):
             account['rounds'] += 1
             account['status'] = 'PENDING'
@@ -205,18 +208,25 @@ def web_app(environ, start_response):
         start_response("302 FOUND", [("Location", "/")])
         return 'redirect'
     elif request.path == '/stop':
-        _id = int(request.GET['id'])
-        stop_set.add(str(_id))
-        start_response("302 FOUND", [("Location", "/")])
-        return 'redirect'
+        _id = str(int(request.GET['id']))
+        if _id in running_set:
+            stop_set.add(_id)
+            start_response("302 FOUND", [("Location", "/")])
+            return 'redirect'
+        else:
+            start_response("200 OK", [("Content-Type", "text/html")])
+            return 'failed!'
     elif request.path == '/rm':
         _id = int(request.GET['id'])
         data = accountdb.get(_id)
         if data:
             data['status'] = 'FAILED'
             accountdb.update(**data)
-        start_response("302 FOUND", [("Location", "/")])
-        return 'redirect'
+            start_response("302 FOUND", [("Location", "/")])
+            return 'redirect'
+        else:
+            start_response("200 OK", [("Content-Type", "text/html")])
+            return 'failed!'
     elif request.path == '/run':
         _id = int(request.GET['id'])
         done = int(request.GET.get('done', 1))
