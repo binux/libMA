@@ -37,7 +37,7 @@ class WebLevelBot(LevelBot):
 
 stop_set = set()
 running_set = set()
-def _run_task(account):
+def _run_task(account, battle_set):
     bot = WebLevelBot()
     bot.login(account['id'], account['pwd'])
     account['name'] = bot.ma.name
@@ -83,8 +83,9 @@ def _run_task(account):
     if not bot.build_roundtable('battle'):
         bot._print('build battle roundtalbe failed!')
         return True
-    battle_list = list(battledb.scan(where="uid%%4=%d%%4 and (cast(%d/atk/1.1 as int)+1)*%d>hp" % (account['rounds'],
-                                bot.ma.roundtable[0].hp, bot.ma.roundtable[0].hp)))
+    battle_list = list(battledb.scan(where="(cast(%d/atk/1.1 as int)+1)*%d>hp" % (
+        bot.ma.roundtable[0].hp, bot.ma.roundtable[0].hp)))
+    battle_list = [x for x in battle_list if int(x['uid']) not in battle_set]
     random.shuffle(battle_list)
     bot._print('battle: %s palyers found' % len(battle_list))
 
@@ -97,6 +98,7 @@ def _run_task(account):
             break
 
         try:
+            battle_set.add(cur['uid'])
             hp, atk = bot.battle(cur['uid'])
         except ma.HeaderError, e:
             if e.code == 8000:
@@ -144,7 +146,8 @@ def run_task(account):
     accountdb.update(**account)
     running_set.add(account['id'])
     try:
-        _run_task(account)
+        battle_set = set(map(int, account['battle'].split(','))) if account['battle'] else set()
+        _run_task(account, battle_set)
         account['nextime'] = time.time() + 60*60
     except ma.HeaderError, e:
         print account['id'], 'FAILED', e
@@ -163,12 +166,14 @@ def run_task(account):
     finally:
         if account['status'] not in ('FAILED', 'DONE'):
             account['status'] = 'PENDING'
-            accountdb.update(**account)
+        account['battle'] = ','.join(battle_set)
+        accountdb.update(**account)
         running_set.remove(account['id'])
         print 'finished account:', account['id']
 
+_quit = False
 def auto_start():
-    while True:
+    while not _quit:
         now = time.time()
         cnt = 0
         for each in accountdb.scan('PENDING'):
@@ -270,6 +275,11 @@ def web_app(environ, start_response):
         except IOError, e:
             start_response("404 NOT FOUND", [])
             return '404'
+    elif request.path == '/quit':
+        global _quit
+        global stop_set
+        _quit = True
+        stop_set = running_set
     else:
         start_response("404 NOT FOUND", [])
         return '404'

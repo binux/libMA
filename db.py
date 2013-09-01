@@ -16,7 +16,8 @@ class AccountDB(basedb.BaseDB):
         cursor = self.conn.cursor()
         cursor.execute('''CREATE TABLE IF NOT EXISTS `%s` (
                 id PRIMARY KEY,
-                uid, pwd, name, lv, status, target_lv, rounds, intime, nextime, friends, friend_max, invite
+                uid, pwd, name, lv, status, target_lv, rounds, intime, nextime, friends, friend_max, invite,
+                battle
                 )'''
                 % self.__tablename__)
         self.conn.commit()
