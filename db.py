@@ -21,12 +21,9 @@ class AccountDB(basedb.BaseDB):
                 % self.__tablename__)
         self.conn.commit()
 
-        # fix error
-        for each in self.scan('RUNNING'):
-            self.update(each['id'], status='PENDING')
-
     @property
     def dbcur(self):
+        self.conn.commit()
         return self.conn.cursor()
 
     def add(self, _id, pwd, status='PENDING', target_lv=25, group=None):
@@ -48,17 +45,14 @@ class AccountDB(basedb.BaseDB):
     def scan(self, status):
         return self._select2dic(self.__tablename__,
                 where="status='%s'" % status)
-        self.conn.commit()
 
     def find_friends(self):
         return self._select2dic(self.__tablename__,
                 where="status != 'FAILED' and status != 'DONE' and friend_max - friends > 0")
-        self.conn.commit()
 
     def get(self, _id):
         ret = self._select2dic(self.__tablename__,
                 where="id='%d'" % int(_id), limit=1)
-        self.conn.commit()
         if ret:
             return ret[0]
         else:
@@ -82,6 +76,7 @@ class BattleDB(basedb.BaseDB):
                 % self.__tablename__)
     @property
     def dbcur(self):
+        self.conn.commit()
         return self.conn.cursor()
 
     def add(self, _id, name=None, hp=999999, atk=999999, deck_rank=100, level=4, leader_card=None):
@@ -95,7 +90,6 @@ class BattleDB(basedb.BaseDB):
 
     def scan(self, where):
         return self._select2dic(self.__tablename__, where=where)
-        self.conn.commit()
 
 accountdb = AccountDB()
 battledb = BattleDB()

@@ -155,11 +155,11 @@ def run_task(account):
     except XMLSyntaxError, e:
         account['nextime'] = time.time() + 3*60
     finally:
-        running_set.remove(account['id'])
         if account['status'] not in ('FAILED', 'DONE'):
             account['status'] = 'PENDING'
             accountdb.update(**account)
-    print 'finished account:', account['id']
+        running_set.remove(account['id'])
+        print 'finished account:', account['id']
 
 def auto_start():
     while True:
@@ -265,6 +265,9 @@ def web_app(environ, start_response):
         return '404'
 
 if __name__ == '__main__':
+    for each in accountdb.scan('RUNNING'):
+        accountdb.update(each['id'], status='PENDING')
+
     server = gevent.pywsgi.WSGIServer(("", 8888), web_app)
     gevent.spawn(auto_start)
     server.serve_forever()
