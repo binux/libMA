@@ -66,6 +66,10 @@ def _run_task(account):
             if int(cur['uid']) == int(bot.ma.user_id):
                 cur = friends.next()
             bot.ma.add_friend(cur['uid'])
+        except ma.HeaderError:
+            break
+        except XMLSyntaxError:
+            break
         except StopIteration:
             break
 
@@ -73,7 +77,7 @@ def _run_task(account):
     if not bot.build_roundtable('battle'):
         bot._print('build battle roundtalbe failed!')
         return True
-    battle_list = list(battledb.scan(where="uid%%4=%d%%4 and (cast(%d/atk*1.1 as int)+1)*%d>hp" % (account['rounds'],
+    battle_list = list(battledb.scan(where="uid%%4=%d%%4 and (cast(%d/atk/1.1 as int)+1)*%d>hp" % (account['rounds'],
                                 bot.ma.roundtable[0].hp, bot.ma.roundtable[0].hp)))
     random.shuffle(battle_list)
     bot._print('battle: %s palyers found' % len(battle_list))
