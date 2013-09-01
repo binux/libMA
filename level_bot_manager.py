@@ -84,7 +84,7 @@ def _run_task(account):
                 if (bot.ma.roundtable[0].hp/cur['atk']/1.2+1)*bot.ma.roundtable[0].power < cur['hp']:
                     continue
                 battle_list.append(cur)
-                if len(battle_list) > 50:
+                if len(battle_list) > 20:
                     break
             if not battle_list:
                 break
@@ -130,11 +130,13 @@ def _run_task(account):
 
 def run_task(account):
     account = dict(account)
+    if account['id'] in running_set:
+        return
+    print 'running account:', account['id']
+    account['status'] = 'RUNNING'
+    accountdb.update(**account)
+    running_set.add(account['id'])
     try:
-        print 'running account:', account['id']
-        account['status'] = 'RUNNING'
-        accountdb.update(**account)
-        running_set.add(account['id'])
         _run_task(account)
         account['nextime'] = time.time() + 60*60
     except ma.HeaderError, e:
