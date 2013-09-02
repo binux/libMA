@@ -59,7 +59,7 @@ def _run_task(account, battle_set):
                 ))
 
     # add friend
-    cur_friends = [int(x) for x in ma.friendlist().xpath('//user/id/text()')]
+    cur_friends = [int(x) for x in bot.ma.friendlist().xpath('//user/id/text()')]
     if bot.ma.friend_max > bot.ma.friends:
         friends = list(accountdb.find_friends())
         random.shuffle(friends)
