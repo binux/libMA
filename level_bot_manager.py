@@ -59,6 +59,7 @@ def _run_task(account, battle_set):
                 ))
 
     # add friend
+    cur_friends = [int(x) for x in ma.friendlist().xpath('//user/id/text()')]
     if bot.ma.friend_max > bot.ma.friends:
         friends = list(accountdb.find_friends())
         random.shuffle(friends)
@@ -68,6 +69,8 @@ def _run_task(account, battle_set):
         if not int(cur['uid']):
             continue
         if int(cur['uid']) == int(bot.ma.user_id):
+            continue
+        if int(cur['uid']) in cur_friends:
             continue
         try:
             bot._print('add friend: %(name)s(%(uid)s)' % cur)
@@ -213,7 +216,8 @@ def web_app(environ, start_response):
         for cur in accountdb.scan('DONE'):
             cur['mintime'] = datetime.datetime.fromtimestamp(cur['intime'])
             cur['mnextime'] = cur['nextime'] - time.time()
-            done.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s' % cur)
+            content.append('%(mintime)s <a href="/log?id=%(id)s">%(id)s</a>:%(invite)s %(name)s lv:%(lv)s '
+                    'rounds:%(rounds)s' % cur)
         content.append(' '.join(done))
         content.append('<h1>FAILED</h1><hr />')
         for cur in accountdb.scan('FAILED'):
@@ -282,6 +286,8 @@ def web_app(environ, start_response):
         _quit = True
         for each in running_set:
             stop_set.add(each)
+        start_response("302 FOUND", [("Location", "/")])
+        return 'redirect'
     else:
         start_response("404 NOT FOUND", [])
         return '404'
