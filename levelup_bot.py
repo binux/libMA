@@ -97,7 +97,9 @@ class LevelBot(Bot):
         for userid in ids:
             try:
                 player = self.ma.playerinfo(userid).player_info.user
-            except XMLSyntaxError:
+            except Exception, e:
+                self._print(e)
+                time.sleep(3)
                 continue
             if player.last_login in self.LAST_LOGIN_FILTER:
                 continue
