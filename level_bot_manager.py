@@ -98,10 +98,11 @@ def _run_task(account, battle_set):
             break
 
         try:
-            battle_set.add(cur['uid'])
             hp, atk = bot.battle(cur['uid'])
+            battle_set.add(cur['uid'])
         except ma.HeaderError, e:
             if e.code == 8000:
+                battle_set.add(cur['uid'])
                 bot._print(e.message)
                 time.sleep(2)
                 continue
@@ -121,6 +122,7 @@ def _run_task(account, battle_set):
         if bot.ma.bc < bot.ma.cost:
             bot.task_no_bc_action()
 
+    bot.task_no_bc_action()
     bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
                 bot.ma.name, bot.ma.level, bot.ma.percentage,
                 bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
@@ -148,7 +150,7 @@ def run_task(account):
     try:
         battle_set = set(map(int, account['battle'].split(','))) if account['battle'] else set()
         _run_task(account, battle_set)
-        account['nextime'] = time.time() + 60*60
+        account['nextime'] = time.time() + random.randint(50*60, 60*60)
     except ma.HeaderError, e:
         print account['id'], 'FAILED', e
         if e.code == 1000:
@@ -157,12 +159,12 @@ def run_task(account):
             return False
         elif e.code == 8000:
             import traceback; traceback.print_exc()
-        account['nextime'] = time.time() + 10*60
+        account['nextime'] = time.time() + random.randint(10*60, 15*60)
     except Exception, e:
         import traceback; traceback.print_exc()
-        account['nextime'] = time.time() + 5*60
+        account['nextime'] = time.time() + random.randint(10*60, 15*60)
     except XMLSyntaxError, e:
-        account['nextime'] = time.time() + 3*60
+        account['nextime'] = time.time() + random.randint(6*60, 15*60)
     finally:
         if account['status'] not in ('FAILED', 'DONE'):
             account['status'] = 'PENDING'
@@ -179,10 +181,10 @@ def auto_start():
         for each in accountdb.scan('PENDING'):
             if each['nextime'] <= now:
                 cnt += 1
-                gevent.spawn(run_task, each)
                 if cnt > 5:
                     break
-        time.sleep(30)
+                gevent.spawn(run_task, each)
+        time.sleep(60)
 
 def web_app(environ, start_response):
     request = Request(environ)
