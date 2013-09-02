@@ -80,6 +80,13 @@ class LevelBot(Bot):
                 cards.append(card)
         if cards:
             card = sorted(cards, key=lambda x: (self.card_prority[x.master_card_id], -x.lv))[0]
+        elif self.ma.level > 15:
+            self.build_roundtable('battle')
+            card = self.ma.roundtable[0]
+        else:
+            card = None
+
+        if card:
             add_cards = [x for x in self.ma.cards.values() if x.rarity <= 3 and x.lv <= 2 and x is not card]
             while add_cards:
                 try:
