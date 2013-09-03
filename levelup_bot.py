@@ -85,6 +85,8 @@ class LevelBot(Bot):
             card = self.ma.roundtable[0]
         else:
             card = None
+        if card and card.lv >= card.lv_max:
+            card = None
 
         if card:
             add_cards = [x for x in self.ma.cards.values() if x.rarity <= 3 and x.lv <= 2 and x is not card]
