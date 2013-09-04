@@ -149,7 +149,10 @@ class LevelBot(Bot):
         #if ret.story_outline.need_level > self.ma.level: #it is checked at client side
             #return
         self._print('story %s' % ret.story_outline.scenario_id)
-        ret = self.ma.start_scenario(ret.story_outline.scenario_id)
+        try:
+            ret = self.ma.start_scenario(0)
+        except ma.HeaderError, e:
+            ret = self.ma.start_scenario(ret.story_outline.scenario_id)
         battle_win = True
         if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('high_damage'):
             while self.ma.bc > self.ma.cost:
