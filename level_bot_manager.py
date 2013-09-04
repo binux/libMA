@@ -123,7 +123,10 @@ def _run_task(account, battle_set):
             accountdb.update(**account)
             bot.free_point()
         if bot.ma.bc < bot.ma.cost:
-            bot.task_no_bc_action()
+            bot.explore()
+        while bot.ma.bc < bot.ma.cost:
+            if not bot.story():
+                break
 
     bot.task_no_bc_action()
     bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (

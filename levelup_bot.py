@@ -150,14 +150,17 @@ class LevelBot(Bot):
             #return
         self._print('story %s' % ret.story_outline.scenario_id)
         ret = self.ma.start_scenario(ret.story_outline.scenario_id)
+        battle_win = True
         if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('high_damage'):
             while self.ma.bc > self.ma.cost:
                 ret = self.ma.story_battle()
                 if ret.battle_result.winner:
                     self._print('story battle win')
+                    battle_win = True
                     break
                 else:
                     self._print('story battle lose')
+                    battle_win = False
                     continue
         ret = self.ma.next_scenario(ret.scenario.phase_id, 0)
         if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('high_damage'):
@@ -165,10 +168,13 @@ class LevelBot(Bot):
                 ret = self.ma.story_battle()
                 if ret.battle_result.winner:
                     self._print('story battle win')
+                    battle_win = True
                     break
                 else:
                     self._print('story battle lose')
+                    battle_win = False
                     continue
+        return battle_win
 
     def task_check(self):
         self.rewards()
