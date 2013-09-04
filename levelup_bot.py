@@ -161,7 +161,7 @@ class LevelBot(Bot):
                 if ret.battle_result.winner:
                     self._print('story battle win')
                     battle_win = True
-                    break
+                    return True
                 else:
                     self._print('story battle lose')
                     battle_win = False
