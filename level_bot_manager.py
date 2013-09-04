@@ -97,7 +97,7 @@ def _run_task(account, battle_set):
             stop_set.remove(int(account['id']))
             bot._print('stoped!')
             break
-        if bot.ma.bc < bot.ma.cost:
+        if not bot.build_roundtable('battle'):
             break
 
         try:
@@ -124,7 +124,8 @@ def _run_task(account, battle_set):
             bot.free_point()
         if bot.ma.bc < bot.ma.cost:
             bot.explore()
-        while bot.ma.bc < bot.ma.cost:
+        cost = bot.ma.cost
+        while bot.ma.bc < cost:
             if not bot.story():
                 break
 
