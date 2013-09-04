@@ -12,6 +12,7 @@ from bot import Bot
 from lxml.etree import XMLSyntaxError
 
 class LevelBot(Bot):
+    BATTLE_COOLDOWN = 10
     def __init__(self):
         self.ma = ma.MA()
         self.story_blocked = False
