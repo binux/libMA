@@ -80,7 +80,7 @@ class LevelBot(Bot):
                 cards.append(card)
         if cards:
             card = sorted(cards, key=lambda x: (self.card_prority[x.master_card_id], -x.lv))[0]
-        elif self.ma.level > 15:
+        elif self.ma.level > 20:
             self.build_roundtable('battle')
             card = self.ma.roundtable[0]
         else:
@@ -142,42 +142,33 @@ class LevelBot(Bot):
             self._print('floor:%s event:%s exp-%s=%s%s gold+%s progress=%s%%' % (
                 floor.id, ret.event_type, ret.get_exp, ret.next_exp,
                 '(LVUP!)' if ret.lvup else '', ret.gold, ret.progress))
-            time.sleep(2)
+            time.sleep(0.5)
 
     def story(self):
         ret = self.ma.story_getoutline()
-        while not self.story_blocked and ret.story_outline.need_level <= self.ma.level:
-            time.sleep(2)
-            self._print('story %s' % ret.story_outline.scenario_id)
-            ret = self.ma.start_scenario(ret.story_outline.scenario_id)
-            if hasattr(ret.scenario, 'sbattle_ready'):
-                if self.build_roundtable('kill', hp=ret.sbattle_ready.hp, atk=ret.sbattle_ready.hp/27):
-                    ret = self.ma.story_battle()
-                    if ret.battle_result.winner:
-                        self._print('story battle win')
-                        continue
-                    else:
-                        self._print('story battle lose')
-                        self.story_blocked = True
-                        break
-                else:
-                    self._print("can't finished story battle")
-                    self.story_blocked = True
-                    break
-            if ret.scenario.phase_id and not self.build_roundtable('kill', hp=90000, 
-                                            atk=2700):
-                self._print("can't build roundtable")
-                break
-            ret = self.ma.next_scenario(ret.scenario.phase_id, 0)
-            if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('kill', hp=ret.sbattle_ready.hp, atk=ret.sbattle_ready.hp/27):
+        #if ret.story_outline.need_level > self.ma.level: #it is checked at client side
+            #return
+        self._print('story %s' % ret.story_outline.scenario_id)
+        ret = self.ma.start_scenario(ret.story_outline.scenario_id)
+        if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('high_damage'):
+            while self.ma.bc > self.ma.cost:
                 ret = self.ma.story_battle()
                 if ret.battle_result.winner:
                     self._print('story battle win')
+                    break
                 else:
                     self._print('story battle lose')
-                    self.story_blocked = True
+                    continue
+        ret = self.ma.next_scenario(ret.scenario.phase_id, 0)
+        if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('high_damage'):
+            while self.ma.bc > self.ma.cost:
+                ret = self.ma.story_battle()
+                if ret.battle_result.winner:
+                    self._print('story battle win')
                     break
-            ret = self.ma.story_getoutline()
+                else:
+                    self._print('story battle lose')
+                    continue
 
     def task_check(self):
         self.rewards()
@@ -195,6 +186,7 @@ if __name__ == '__main__':
     from db import battledb
     bot = LevelBot()
     bot.login(sys.argv[1], sys.argv[2])
+    #import IPython; IPython.embed()
     for player in bot.scan_player(range(int(sys.argv[3]), int(sys.argv[4]))):
         print player.id, unicode(player.name), player.deck_rank, player.leader_card.hp, unicode(player.last_login)
         battledb.add(player.id, name=unicode(player.name),
