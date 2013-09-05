@@ -218,7 +218,7 @@ class Bot(object):
 
     def explore(self):
         if self.my_fairy is not None:
-            ap_limit = max(self.ma.ap_max - 20, 20)
+            ap_limit = max(self.ma.ap_max, 20)
         else:
             ap_limit = min(self.ma.ap_max / 2, 20)
         if self.ma.ap < ap_limit:

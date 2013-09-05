@@ -43,9 +43,9 @@ class LevelBot(Bot):
             if self.ma.friends < self.ma.friend_max:
                 self.ma.approve_friend(user.id)
                 self._print('approve friend: %s' % user.name)
-            else:
-                self.ma.refuse_friend(user.id)
-                self._print('refuse friend: %s' % user.name)
+            #else:
+                #self.ma.refuse_friend(user.id)
+                #self._print('refuse friend: %s' % user.name)
             time.sleep(2)
         #if self.ma.friends < self.ma.friend_max:
             #self.ma.add_friend(userid)
@@ -195,7 +195,7 @@ if __name__ == '__main__':
     from db import battledb
     bot = LevelBot()
     bot.login(sys.argv[1], sys.argv[2])
-    #import IPython; IPython.embed()
+    import IPython; IPython.embed()
     for player in bot.scan_player(range(int(sys.argv[3]), int(sys.argv[4]))):
         print player.id, unicode(player.name), player.deck_rank, player.leader_card.hp, unicode(player.last_login)
         battledb.add(player.id, name=unicode(player.name),
