@@ -28,7 +28,8 @@ class WebLevelBot(LevelBot):
         else:
             self.ma.master_cards = self.__class__.master_cards
 
-    def _print(self, message):
+    def _print(self, *args):
+        message = ' '.join(args)
         print self.login_id, message
         with open('/tmp/libma.%s.log' % self.login_id, 'a') as fp:
             fp.write('%s ' % datetime.datetime.now())
@@ -37,8 +38,7 @@ class WebLevelBot(LevelBot):
 
 stop_set = set()
 running_set = set()
-def _run_task(account, battle_set):
-    bot = WebLevelBot()
+def _run_task(bot, account, battle_set):
     bot.login(account['id'], account['pwd'])
     account['name'] = bot.ma.name
     account['uid'] = int(bot.ma.user_id)
@@ -48,15 +48,7 @@ def _run_task(account, battle_set):
     accountdb.update(**account)
 
     bot.task_check()
-    if account['status'] == 'DONE':
-        return True
-
-    bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
-                bot.ma.name, bot.ma.level, bot.ma.percentage,
-                bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
-                bot.ma.gold, len(bot.ma.cards),
-                "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
-                ))
+    bot.report()
 
     # add friend
     cur_friends = [int(x) for x in bot.ma.friendlist().xpath('//user/id/text()')]
@@ -93,6 +85,8 @@ def _run_task(account, battle_set):
     bot._print('battle: %s palyers found' % len(battle_list))
 
     for cur in battle_list:
+        if bot.ma.level >= account['target_lv']:
+            break
         if int(account['id']) in stop_set:
             stop_set.remove(int(account['id']))
             bot._print('stoped!')
@@ -100,6 +94,7 @@ def _run_task(account, battle_set):
         if not bot.build_roundtable('battle'):
             break
 
+        # battle
         try:
             hp, atk = bot.battle(cur['uid'])
             battle_set.add(cur['uid'])
@@ -117,25 +112,20 @@ def _run_task(account, battle_set):
         if hp != cur['hp'] or atk != cur['atk']:
             battledb.update(cur['uid'], hp, atk)
 
+        # lvup!
         if bot.ma.free_ap_bc_point:
             account['lv'] = bot.ma.level
             account['status'] = 'RUNNING'
             accountdb.update(**account)
-            bot.free_point()
+
+        # low bc
         if bot.ma.bc < bot.ma.cost:
             bot.explore()
-        cost = bot.ma.cost
-        while bot.ma.bc < cost:
-            if not bot.story():
-                break
-
-    bot.task_no_bc_action()
-    bot._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s" % (
-                bot.ma.name, bot.ma.level, bot.ma.percentage,
-                bot.ma.ap, bot.ma.ap_max, bot.ma.bc, bot.ma.bc_max,
-                bot.ma.gold, len(bot.ma.cards),
-                "Free Point:%s " % bot.ma.free_ap_bc_point if bot.ma.free_ap_bc_point else '',
-                ))
+            cost = bot.ma.cost
+            while bot.ma.bc < cost and bot.story():
+                continue
+            bot.task_check()
+            bot.report()
 
     account['lv'] = bot.ma.level
     account['friends'] = bot.ma.friends
@@ -155,20 +145,23 @@ def run_task(account):
     accountdb.update(**account)
     running_set.add(int(account['id']))
     try:
+        bot = WebLevelBot()
         battle_set = set(map(int, account['battle'].split(','))) if account['battle'] else set()
-        _run_task(account, battle_set)
+        _run_task(bot, account, battle_set)
         account['nextime'] = time.time() + random.randint(50*60, 60*60)
     except ma.HeaderError, e:
-        print account['id'], 'FAILED', e
+        bot._print(account['id'], 'FAILED', e)
         if e.code == 1000:
             account['status'] = 'FAILED'
             accountdb.update(**account)
             return False
         elif e.code == 8000:
-            import traceback; traceback.print_exc()
+            import traceback
+            bot._print(traceback.format_exc())
         account['nextime'] = time.time() + random.randint(10*60, 15*60)
     except Exception, e:
-        import traceback; traceback.print_exc()
+        import traceback
+        bot._print(traceback.format_exc())
         account['nextime'] = time.time() + random.randint(10*60, 15*60)
     except XMLSyntaxError, e:
         account['nextime'] = time.time() + random.randint(6*60, 15*60)
@@ -178,7 +171,7 @@ def run_task(account):
         account['battle'] = ','.join(map(str, battle_set))
         accountdb.update(**account)
         running_set.remove(int(account['id']))
-        print 'finished account:', account['id']
+        bot._print('finished account:', account['id'])
 
 _quit = False
 def auto_start():

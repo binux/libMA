@@ -144,7 +144,7 @@ class Bot(object):
         elif _type == 'battle':
             cards = sorted([x for x in self.ma.cards.values() if x.hp>700 and x.power>500],
                         key=lambda x: (x.cost, -x.hp*x.power))[:1]
-            if not cards:
+            if not cards or self.ma.bc < cards[0].cost:
                 return False
         else:
             return False
@@ -252,17 +252,21 @@ class Bot(object):
                     self._print('got card: %s-%s%s' % (master_card['name'], master_card['rarity'],
                         ' (HOLO!)' if explore.user_card.holography else '' ))
 
-    def run(self, login_id, password, area=None):
-        self.login(login_id, password)
-        self.choose_area(area)
-        while True:
-            self._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Gold:%s Cards:%s %s%s%s" % (
+    def report(self):
+        self._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Friends:%s/%s Gold:%s Cards:%s %s%s%s" % (
                 self.ma.name, self.ma.level, self.ma.percentage,
                 self.ma.ap, self.ma.ap_max, self.ma.bc, self.ma.bc_max,
+                self.ma.friends, self.ma.friend_max,
                 self.ma.gold, len(self.ma.cards),
                 "Free Point:%s " % self.ma.free_ap_bc_point if self.ma.free_ap_bc_point else '',
                 "Fairy " if self.my_fairy is not None else '',
                 "Reward:%s" % getattr(self.ma, 'remaining_rewards', '-')))
+
+    def run(self, login_id, password, area=None):
+        self.login(login_id, password)
+        self.choose_area(area)
+        while True:
+            self.report()
             self.fairy()
             self.explore()
             time.sleep(self.SLEEP_TIME)

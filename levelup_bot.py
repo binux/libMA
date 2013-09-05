@@ -13,10 +13,6 @@ from lxml.etree import XMLSyntaxError
 
 class LevelBot(Bot):
     BATTLE_COOLDOWN = 10
-    def __init__(self):
-        self.ma = ma.MA()
-        self.story_blocked = False
-
     def login(self, login_id, password, server=None):
         self.login_id = login_id
         self.ma.check_inspection()
@@ -154,31 +150,34 @@ class LevelBot(Bot):
             ret = self.ma.start_scenario(0)
         except ma.HeaderError, e:
             ret = self.ma.start_scenario(ret.story_outline.scenario_id)
-        battle_win = True
-        if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('high_damage'):
-            while self.ma.bc > self.ma.cost:
-                ret = self.ma.story_battle()
-                if ret.battle_result.winner:
-                    self._print('story battle win')
-                    battle_win = True
-                    return True
-                else:
-                    self._print('story battle lose')
-                    battle_win = False
-                    continue
+        if hasattr(ret.scenario, 'sbattle_ready'):
+            if self.build_roundtable('high_damage'):
+                while self.ma.bc > self.ma.cost:
+                    ret = self.ma.story_battle()
+                    if ret.battle_result.winner:
+                        self._print('story battle win')
+                        return True
+                    else:
+                        self._print('story battle lose')
+                        continue
+                return False
+            else:
+                return False
         ret = self.ma.next_scenario(ret.scenario.phase_id, 0)
-        if hasattr(ret.scenario, 'sbattle_ready') and self.build_roundtable('high_damage'):
-            while self.ma.bc > self.ma.cost:
-                ret = self.ma.story_battle()
-                if ret.battle_result.winner:
-                    self._print('story battle win')
-                    battle_win = True
-                    break
-                else:
-                    self._print('story battle lose')
-                    battle_win = False
-                    continue
-        return battle_win
+        if hasattr(ret.scenario, 'sbattle_ready'):
+            if self.build_roundtable('high_damage'):
+                while self.ma.bc > self.ma.cost:
+                    ret = self.ma.story_battle()
+                    if ret.battle_result.winner:
+                        self._print('story battle win')
+                        return True
+                    else:
+                        self._print('story battle lose')
+                        continue
+                return False
+            else:
+                return False
+        return True
 
     def task_check(self):
         self.rewards()
