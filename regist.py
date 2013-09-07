@@ -50,8 +50,11 @@ class Tasoo:
 
 if getattr(config, 'tasoo_uid', None):
     tasoo = Tasoo(config.tasoo_uid, config.tasoo_pwd)
-def all_in_one(invitation_id):
-    password = hashlib.md5(invitation_id).hexdigest()[:10]
+def all_in_one(invitation_id, name_prefix=None):
+    _hash = hashlib.md5(invitation_id).hexdigest()
+    password = _hash[:10]
+    if not name_prefix:
+        name_prefix = _hash[-5:]
     mobile = tasoo.get_tel()
     submit_smscode = smsVerify(mobile)
     sms = None
@@ -70,10 +73,10 @@ def all_in_one(invitation_id):
     #ma.check_inspection()
     #ma.notification_post_devicetoken(mobile, config.password)
     ma.regist(mobile, password, invitation_id)
-    ma.save_character(password[-5:]+sms)
+    ma.save_character(name_prefix+sms[:4])
     ma.tutorial_next(7030)
     ma.tutorial_next(8000)
-    return mobile, password, invitation_id+sms
+    return mobile, password, name_prefix+sms[:4]
 
 if __name__ == '__main__':
     import sys

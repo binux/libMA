@@ -191,10 +191,10 @@ def web_app(environ, start_response):
     request = Request(environ)
     if request.path == '/':
         template = ('<html><body>'
+                    '<form method=POST action="/invite">invite <input name=id /> '
+                    'count<input name=count value=10 /> name<input name=name /><input type=submit /></form>'
                     '<form method=POST action="/add">add <input name="id" /><input name="pwd" /> '
                     'group:<input name=group /><input type=submit /></form>'
-                    '<form method=POST action="/invite">invite <input name="id" /> '
-                    'count<input name="count" value=10 /><input type=submit /></form>'
                     '<pre>%s</pre></body></html>')
         content = []
         content.append('<h1>RUNNING</h1><hr />')
@@ -238,10 +238,11 @@ def web_app(environ, start_response):
     elif request.path == '/invite':
         invitation_id = request.POST['id']
         count = request.POST['count']
+        name_prefix = request.POST.get('name')
         def do(invitation_id, count):
             for _ in range(count):
                 try:
-                    ret = regist.all_in_one(invitation_id)
+                    ret = regist.all_in_one(invitation_id, name_prefix)
                 except Exception, e:
                     ret = [e, ]
                 finally:
