@@ -6,13 +6,10 @@ password = sys.argv[2]
 #regist = sys.argv[3]
 
 ma = MA()
-ma.login(login_id, password)
-#ma.check_inspection()
-#ma.notification_post_devicetoken(login_id, password)
-#try:
-    #ma.regist(login_id, password, regist)
-#except:
-    #pass
+#ma.login(login_id, password)
+ma.check_inspection()
+ma.notification_post_devicetoken(login_id, password)
+ma.regist(login_id, password, regist)
 ma.save_character(login_id)
 
 ma.tutorial_next(7030)

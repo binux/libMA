@@ -11,6 +11,7 @@ import random
 import datetime
 import gevent
 import gevent.pywsgi
+import regist
 from webob import Request
 from db import accountdb, battledb
 from levelup_bot import LevelBot
@@ -29,7 +30,7 @@ class WebLevelBot(LevelBot):
             self.ma.master_cards = self.__class__.master_cards
 
     def _print(self, *args):
-        message = ' '.join(args)
+        message = ' '.join([str(x) for x in args])
         print self.login_id, message
         with open('/tmp/libma.%s.log' % self.login_id, 'a') as fp:
             fp.write('%s ' % datetime.datetime.now())
@@ -190,8 +191,10 @@ def web_app(environ, start_response):
     request = Request(environ)
     if request.path == '/':
         template = ('<html><body>'
-                    '<form action="/add">add <input name="id" /><input name="pwd" /> '
+                    '<form method=POST action="/add">add <input name="id" /><input name="pwd" /> '
                     'group:<input name=group /><input type=submit /></form>'
+                    '<form method=POST action="/invite">invite <input name="id" /> '
+                    'count<input name="count" value=10 /><input type=submit /></form>'
                     '<pre>%s</pre></body></html>')
         content = []
         content.append('<h1>RUNNING</h1><hr />')
@@ -226,11 +229,29 @@ def web_app(environ, start_response):
         start_response("200 OK", [("Content-Type", "text/html")])
         return template % '\n'.join([x.encode('utf8') for x in content])
     elif request.path == '/add':
-        _id = request.GET['id']
-        pwd = request.GET['pwd']
-        group = request.GET['group']
+        _id = request.POST['id']
+        pwd = request.POST['pwd']
+        group = request.POST['group']
         accountdb.add(_id, pwd, group=group)
         start_response("302 FOUND", [("Location", "/")])
+        return 'redirect'
+    elif request.path == '/invite':
+        invitation_id = request.POST['id']
+        count = request.POST['count']
+        def do(invitation_id, count):
+            for _ in range(count):
+                try:
+                    ret = regist.all_in_one(invitation_id)
+                except Exception, e:
+                    ret = [e, ]
+                finally:
+                    message = ' '.join([str(x) for x in ret])
+                    print message
+                    with open('/tmp/libma.%s.log' % invitation_id, 'a') as fp:
+                        fp.write(message)
+                        fp.write('\n')
+        gevent.spawn(do, invitation_id, int(count))
+        start_response("302 FOUND", [("Location", "/log?id=%s" % invitation_id)])
         return 'redirect'
     elif request.path == '/stop':
         _id = int(request.GET['id'])
