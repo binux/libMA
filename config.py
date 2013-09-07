@@ -18,12 +18,16 @@ HTTP_PROXY = ""
 
 # for chinese users
 BASE_URL = "http://game1-CBT.ma.sdo.com:10001"
+ACTIVE_URL = "http://push.mam.sdo.com:8000/active.php"
 
 # starts with Million/100
 USER_AGENT = "Million/100 (ibbot; ibot; 9.9) ib/ibbot/ibbot:9.9/IMM76L/ibbot/test-keys"
 
 # AESkey,god knows where it from
 AESkey = "rBwj1MIAivVN222b"
+
+#PUSH SERVER need this key
+DES_KEY = "Fwe3;$84@kl3221554*G(|d@"
 
 try:
     from local_config import *

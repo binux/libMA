@@ -9,6 +9,7 @@ import os
 import re
 import time
 import json
+import array
 import random
 import config
 import hashlib
@@ -19,6 +20,7 @@ from lxml import objectify, etree
 from urlparse import urljoin
 from HttpUtils import _cryptParams
 from CryptUtils import crypt
+from Crypto.Cipher import DES3
 
 class HeaderError(Exception):
     def __init__(self, code, message):
@@ -230,6 +232,7 @@ class MA:
         login_id = str(login_id)
         if token == None:
             token = hashlib.md5(hashlib.sha1(login_id+password).hexdigest()).hexdigest()
+        self.token = token
         return self.cat("~/notification/post_devicetoken", login_id=login_id, password=password, app=app,
                 token=token.encode("base64").replace("\n", ""), S=S) 
 
@@ -570,6 +573,32 @@ class MA:
             'serverNo': serverno,
             'userId': userid,
             })).json
+
+    #push active
+    def push_active(self, token=None):
+        if token is None:
+            token = getattr(self, 'token', config.deviceToken)
+        BS = 8
+        pad = lambda s: s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
+
+        keyarray = array.array('B', config.DES_KEY.encode("utf-8"))
+        des = DES3.new(keyarray)
+        data = json.dumps({
+            '_c': token,
+            '_t': str(int(time.time()))}
+            , separators=(',', ':'))
+        data = des.encrypt(pad(data))
+        ret = requests.post(config.ACTIVE_URL, data={'_d':data.encode('base64')},
+                headers={
+                    'IMEI': self.device_id,
+                    'APPID': 1000,
+                    'CHANNEL': '',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'User-Agent': 'Apache-HttpClient/UNAVAILABLE (java 1.4)',
+                    })
+        ret_json = ret.json()
+        assert ret_json['code'] == 1, 'push active failed!'
+        return ret_json
 
 if __name__ == '__main__':
     ma = MA()
