@@ -67,6 +67,30 @@ class User(object):
         data = self.app.tutorial_next(params)
         return data
 
+    def cardUpdate(self):
+        params = {
+            "S": self.session,
+            "revision": '0',
+        }
+        data = self.app.masterdata_card_update(params)
+        return data
+
+    def cardCategoryUpdate(self):
+        params = {
+            "S": self.session,
+            "revision": '0',
+        }
+        data = self.app.masterdata_card__category_update(params)
+        return data
+
+    def cardComboUpdate(self):
+        params = {
+            "S": self.session,
+            "revision": '0',
+        }
+        data = self.app.masterdata_combo_update(params)
+        return data
+
 class RoundTable(object):
 
     def __init__(self, app):
@@ -200,3 +224,4 @@ if __name__ == "__main__":
     device = Device(token=deviceToken)
     user = device.newUser(loginId=loginId, password=password)
     loginData = user.login()
+    cardData = user.cardUpdate()
