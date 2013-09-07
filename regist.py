@@ -70,7 +70,7 @@ def all_in_one(invitation_id):
     #ma.check_inspection()
     #ma.notification_post_devicetoken(mobile, config.password)
     ma.regist(mobile, password, invitation_id)
-    ma.save_character(invitation_id+sms)
+    ma.save_character(password[-5:]+sms)
     ma.tutorial_next(7030)
     ma.tutorial_next(8000)
     return mobile, password, invitation_id+sms
