@@ -152,7 +152,7 @@ class LevelBot(Bot):
             ret = self.ma.start_scenario(ret.story_outline.scenario_id)
         if hasattr(ret.scenario, 'sbattle_ready'):
             if self.build_roundtable('high_damage'):
-                while self.ma.bc > self.ma.cost:
+                while self.ma.bc >= self.ma.cost:
                     ret = self.ma.story_battle()
                     if ret.battle_result.winner:
                         self._print('story battle win')
@@ -166,7 +166,7 @@ class LevelBot(Bot):
         ret = self.ma.next_scenario(ret.scenario.phase_id, 0)
         if hasattr(ret.scenario, 'sbattle_ready'):
             if self.build_roundtable('high_damage'):
-                while self.ma.bc > self.ma.cost:
+                while self.ma.bc >= self.ma.cost:
                     ret = self.ma.story_battle()
                     if ret.battle_result.winner:
                         self._print('story battle win')

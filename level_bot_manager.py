@@ -30,7 +30,7 @@ class WebLevelBot(LevelBot):
             self.ma.master_cards = self.__class__.master_cards
 
     def _print(self, *args):
-        message = ' '.join([str(x) for x in args])
+        message = ' '.join([unicode(x) for x in args])
         print self.login_id, message
         with open('/tmp/libma.%s.log' % self.login_id, 'a') as fp:
             fp.write('%s ' % datetime.datetime.now())
