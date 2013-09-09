@@ -231,7 +231,9 @@ class MA:
     def notification_post_devicetoken(self, login_id, password, app="and", token=None, S="nosessionid"):
         login_id = str(login_id)
         if token == None:
-            token = hashlib.md5(hashlib.sha1(login_id+password).hexdigest()).hexdigest()
+            #configure different deviceId to get a safe value
+            token = hashlib.md5(hashlib.sha1(config.deviceToken+login_id+password).hexdigest()).hexdigest()
+            token += str(random.randint(0, 1000000))
         self.token = token
         return self.cat("~/notification/post_devicetoken", login_id=login_id, password=password, app=app,
                 token=token.encode("base64").replace("\n", ""), S=S) 
