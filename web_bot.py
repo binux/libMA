@@ -18,7 +18,7 @@ from bot import Bot
 class WebSocketBot(Bot):
     SLEEP_TIME = 60
     CHOOSE_CARD_LIMIT = 30
-    NCARDS_LIMIT = [3, 6, ]
+    NCARDS_LIMIT = [3, ]
     master_cards = {}   # shared master cards
     atk_log = {}   # shared atk log
     connected = 0

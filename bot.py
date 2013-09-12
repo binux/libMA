@@ -13,7 +13,7 @@ class Bot(object):
     SLEEP_TIME = 30
     KEEP_FAIRY_TIME = 15*60
     CHOOSE_CARD_LIMIT = 50
-    NCARDS_LIMIT = [3, 6, 9, 12, ]
+    NCARDS_LIMIT = [3, ]
     def __init__(self):
         self.ma = ma.MA()
         self.my_fairy = None
@@ -95,7 +95,7 @@ class Bot(object):
             cards = []
             masters = set()
             for card in sorted([x for x in self.ma.cards.values() if x.lv > 10],
-                    key=lambda x: x.hp*x.power, reverse=True)[:self.CHOOSE_CARD_LIMIT]:
+                    key=lambda x: x.hp+x.power, reverse=True)[:self.CHOOSE_CARD_LIMIT]:
                 if card.master_card_id in masters:
                     continue
                 masters.add(card.master_card_id)
@@ -125,8 +125,9 @@ class Bot(object):
         elif _type == 'high_damage':
             cards = []
             masters = set()
-            for card in sorted(self.ma.cards.values(),
-                    key=lambda x: x.power, reverse=True):
+            high_damage_cards = sorted(self.ma.cards.values(), key=lambda x: x.hp+x.power, reverse=True)[:15]
+            for card in sorted(high_damage_cards,
+                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True):
                 if card.master_card_id in masters:
                     continue
                 masters.add(card.master_card_id)
