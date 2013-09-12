@@ -8,6 +8,7 @@
 import ma
 import random
 import time
+import config
 
 class Bot(object):
     SLEEP_TIME = 30
@@ -263,6 +264,41 @@ class Bot(object):
                 "Fairy " if self.my_fairy is not None else '',
                 "Reward:%s" % getattr(self.ma, 'remaining_rewards', '-')))
 
+    def fairy_rewards(self):
+        while len(self.ma.cards) < self.ma.max_card_num - 5:
+            self.ma.fairy_select()
+            self._print('remaining_rewards: %s' % self.ma.remaining_rewards)
+            self.ma.fairy_rewards()
+            to_sell = [x for x in self.ma.cards.values() \
+                    if x.lv == 1 and x.rarity == 1 and not x.holography \
+                    and x.master_card_id != 66]
+            #if config.DEBUG:
+                #for each in to_sell:
+                    #self._print(' '.join(each.rarity, each.name, each.lv))
+            before_gold = self.ma.gold
+            card_len = len(to_sell)
+            while to_sell:
+                self.ma.card_sell(to_sell[:30])
+                to_sell = to_sell[30:]
+            after_gold = self.ma.gold
+            self._print('Sell %d cards gold+%s=%s' % (
+                card_len, after_gold-before_gold, after_gold))
+
+    def compound(self, base_card, target_lv=77):
+        to_compound = [x for x in self.ma.cards.values() \
+                if x.lv == 1 and (x.rarity == 2 or x.master_card_id == 66) \
+                and not x.holography]
+        #if config.DEBUG:
+            #for each in to_compound:
+                #self._print(' '.join(each.rarity, each.name, each.lv))
+        target_lv = min(target_lv, base_card.lv_max)
+        while to_compound and base_card.lv < target_lv:
+            ret = self.ma.card_compound(base_card, to_compound[:30])
+            base_card = self.ma.cards[base_card.serial_id]
+            self._print('%s %s lv%d->%d/%d' % (base_card.rarity, base_card.name,
+                base_card.lv-ret.compound_buildup.lv_diff, base_card.lv, base_card.lv_max))
+            to_compound = to_compound[30:]
+
     def run(self, login_id, password, area=None):
         self.login(login_id, password)
         self.choose_area(area)
@@ -274,8 +310,9 @@ class Bot(object):
 
 if __name__ == '__main__':
     import sys
-    import config
     bot = Bot()
+    bot.login(config.loginId, config.password)
+    import IPython; IPython.embed()
     while True:
         try:
             bot.run(config.loginId, config.password, int(sys.argv[1]) if len(sys.argv) > 1 else None)

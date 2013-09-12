@@ -104,6 +104,7 @@ class MA:
         self.session.headers.update(self.default_http_header)
         self.session_id = None
         self.battle_cooldown = 0
+        self.ignore_error = False
         self.your_data = {}
 
     @property
@@ -139,7 +140,10 @@ class MA:
 
     def parse_header(self, header):
         error_code = int(header.xpath('./error/code/text()')[0])
-        if error_code == 1010:
+        if self.ignore_error:
+            error_message = unicode(header.xpath('./error/message/text()')[0])
+            self.last_message = error_message
+        elif error_code == 1010:
             error_message = unicode(header.xpath('./error/message/text()')[0])
             self.last_message = error_message
         elif error_code:
@@ -216,7 +220,7 @@ class MA:
         self.parse_header(xml.xpath('/response/header')[0])
 
         body = xml.xpath('/response/body')[0]
-        if config.DEBUG:
+        if config.DEBUG and config.PRINT:
             print etree.tostring(body, pretty_print=True)
         return body
 
@@ -346,6 +350,12 @@ class MA:
         self.remaining_rewards = ret.fairy_select.remaining_rewards
         return ret
 
+    def fairy_rewards(self):
+        self.ignore_error = True
+        ret = self.get("~/menu/fairyrewards")
+        self.ignore_error = False
+        return ret
+
     def ranking(self, ranktype_id=0, top=0, move=1):
         return self.get("~/ranking/ranking", ranktype_id=ranktype_id, top=top, move=move)
 
@@ -379,9 +389,11 @@ class MA:
 
     def card_sell(self, serial_id):
         if isinstance(serial_id, list):
-            serial_id = ",".join(map(str, serial_id))
+            serial_id = ",".join(map(lambda x: str(x.serial_id) if isinstance(x, Card) else str(x),
+                serial_id))
+        elif isinstance(serial_id, Card):
+            serial_id = serial_id.serial_id
         return self.get("~/trunk/sell", serial_id=serial_id)
-
 
     def like_user(self, users, dialog=1):
         if isinstance(users, list):
@@ -541,7 +553,6 @@ class MA:
     # error api?
     def fairy_win(self, serial_id, user_id):
         return self.get("~/exploration/fairy_win", serial_id=serial_id, user_id=user_id)
-
 
     def _bind_data(self, phone, nickname, groupid=1):
         return self.post('http://www.niuxba.com/ma/backend/cgi-bin/bindUser.php', data=json.dumps({

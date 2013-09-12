@@ -3,6 +3,7 @@
 
 # debug mode
 DEBUG = False
+PRINT = False
 
 # deviceToken should be a 32 length string,i dont't want to know where it from
 deviceToken = "209504d1c903cdb5d0f4b2725b7803db728948"
