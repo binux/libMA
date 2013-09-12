@@ -311,8 +311,6 @@ class Bot(object):
 if __name__ == '__main__':
     import sys
     bot = Bot()
-    bot.login(config.loginId, config.password)
-    import IPython; IPython.embed()
     while True:
         try:
             bot.run(config.loginId, config.password, int(sys.argv[1]) if len(sys.argv) > 1 else None)
