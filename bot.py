@@ -127,14 +127,13 @@ class Bot(object):
             cards = []
             masters = set()
             high_damage_cards = sorted(self.ma.cards.values(), key=lambda x: x.hp+x.power, reverse=True)[:15]
-            for card in sorted(high_damage_cards,
-                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True):
-                if card.master_card_id in masters:
-                    continue
-                masters.add(card.master_card_id)
-                cards.append(card)
-                if len(cards) == 3:
-                    break
+            sort_by_cp = sorted(high_damage_cards,
+                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True)
+            cards = sort_by_cp[:3]
+            if not any(card for card in cards if card.skill_type==2):
+                hp_card = [card for card in sort_by_cp if card.skill_type==2]
+                if hp_card:
+                    cards = cards[:2]+hp_card[:1]
             if sum([x.cost for x in cards]) > self.ma.bc:
                 return False
         elif _type == 'low_cost' or not _type:
