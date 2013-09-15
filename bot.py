@@ -12,7 +12,7 @@ import config
 
 class Bot(object):
     SLEEP_TIME = 30
-    KEEP_FAIRY_TIME = 15*60
+    KEEP_FAIRY_TIME = 10*60
     CHOOSE_CARD_LIMIT = 50
     NCARDS_LIMIT = [3, ]
     def __init__(self):
