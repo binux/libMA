@@ -36,8 +36,9 @@
         ws.close();
       }
       var login_id = form.id.value,
-          password = form.pwd.value;
-      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password);
+          password = form.pwd.value,
+          area = form.area.value;
+      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area);
       ws.onopen = function() {
         log.innerHTML += "<br />connected.";
       };

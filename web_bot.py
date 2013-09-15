@@ -52,13 +52,13 @@ def websocket_app(environ, start_response):
         ws = environ["wsgi.websocket"]
         login_id = request.GET['id']
         password = request.GET['password']
-        area = request.GET['area']
+        area = request.GET.get('area', None)
         bot = WebSocketBot(ws)
         print "conn+%s=%d %s" % (environ.get('HTTP_X_REAL_IP', environ['REMOTE_ADDR']),
                                  WebSocketBot.connected, environ.get('HTTP_USER_AGENT', '-'))
         while True:
             try:
-                bot.run(login_id, password, area)
+                bot.run(login_id, password, int(area) if area else None)
             except ma.HeaderError, e:
                 print e.code, e.message
                 ws.send('%s %s %s' % (e.code, e.message, 'sleep for 10min'))
@@ -70,6 +70,7 @@ def websocket_app(environ, start_response):
                 break
             except Exception, e:
                 import traceback; traceback.print_exc()
+                ws.send('%s' % e)
                 break
     else:
         start_response("200 OK", [("Content-Type", "text/html")])
