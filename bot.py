@@ -58,7 +58,7 @@ class Bot(object):
                     break
         else:
             for area in areas.xpath('//area_info'):
-                if area.id == area_id:
+                if area.id == int(area_id):
                     break
         self.area_id = area_id
 
