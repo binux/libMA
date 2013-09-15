@@ -36,6 +36,15 @@ class Bot(object):
         self.ma.masterdata_card()
         self.ma.roundtable_edit()
 
+    def rewards(self):
+        ret = self.ma.rewardbox()
+        ids = ret.xpath('//rewardbox/id/text()')
+        while ids:
+            ret = self.ma.get_rewards(ids[:20])
+            self._print('get reward')
+            ids = ids[20:]
+            time.sleep(2)
+
     def choose_area(self, area_id=None):
         areas = self.ma.area()
         for area in areas.xpath('//area_info'):
@@ -130,10 +139,10 @@ class Bot(object):
             sort_by_cp = sorted(high_damage_cards,
                     key=lambda x: (x.hp+x.power)/x.cost, reverse=True)
             cards = sort_by_cp[:3]
-            if not any(card for card in cards if card.skill_type==2):
-                hp_card = [card for card in sort_by_cp if card.skill_type==2]
-                if hp_card:
-                    cards = cards[:2]+hp_card[:1]
+            #if not any(card for card in cards if card.skill_type==2):
+                #hp_card = [card for card in sort_by_cp if card.skill_type==2]
+                #if hp_card:
+                    #cards = cards[:2]+hp_card[:1]
             if sum([x.cost for x in cards]) > self.ma.bc:
                 return False
         elif _type == 'low_cost' or not _type:

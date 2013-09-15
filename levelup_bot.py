@@ -28,15 +28,6 @@ class LevelBot(Bot):
     def _print(self, message):
         print message
 
-    def rewards(self):
-        ret = self.ma.rewardbox()
-        ids = ret.xpath('//rewardbox/id/text()')
-        while ids:
-            ret = self.ma.get_rewards(ids[:20])
-            self._print('get reward')
-            ids = ids[20:]
-            time.sleep(2)
-
     def friends(self):
         ret = self.ma.friend_notice()
         for user in ret.xpath('//user'):
