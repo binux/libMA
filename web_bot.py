@@ -52,12 +52,13 @@ def websocket_app(environ, start_response):
         ws = environ["wsgi.websocket"]
         login_id = request.GET['id']
         password = request.GET['password']
+        area = request.GET['area']
         bot = WebSocketBot(ws)
         print "conn+%s=%d %s" % (environ.get('HTTP_X_REAL_IP', environ['REMOTE_ADDR']),
                                  WebSocketBot.connected, environ.get('HTTP_USER_AGENT', '-'))
         while True:
             try:
-                bot.run(login_id, password)
+                bot.run(login_id, password, area)
             except ma.HeaderError, e:
                 print e.code, e.message
                 ws.send('%s %s %s' % (e.code, e.message, 'sleep for 10min'))
