@@ -250,7 +250,7 @@ class Bot(object):
                 self._print('find fairy: %slv%s hp:%s' % (explore.fairy.name, explore.fairy.lv, explore.fairy.hp))
                 self.battle(explore.fairy.serial_id, explore.fairy.discoverer_id)
                 self.my_fairy = explore.fairy
-                ap_limit = max(self.ma.ap_max - 20, 20)
+                ap_limit = max(self.ma.ap_max, 20)
             if explore.xpath('./next_floor') and explore.next_floor.floor_info.boss_id == 0:
                 self.floor_id = explore.next_floor.floor_info.id
                 self.floor_cost = explore.next_floor.floor_info.cost
