@@ -30,6 +30,9 @@ AESkey = "rBwj1MIAivVN222b"
 #PUSH SERVER need this key
 DES_KEY = "Fwe3;$84@kl3221554*G(|d@"
 
+tasoo_uid = None
+tasoo_pwd = None
+
 try:
     from local_config import *
 except ImportError:

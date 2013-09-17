@@ -18,8 +18,7 @@ import requests
 from os.path import join as path_join
 from lxml import objectify, etree
 from urlparse import urljoin
-from HttpUtils import _cryptParams
-from CryptUtils import crypt
+from CryptUtils import crypt, _cryptParams
 from Crypto.Cipher import DES3
 
 class HeaderError(Exception):

@@ -52,3 +52,11 @@ class Crypt(object):
         self.key = key
 
 crypt = Crypt(AESkey)
+
+def _cryptParams(params):
+    rtn = {}
+    for k, v in params.items():
+        if isinstance(v,unicode):
+            v = v.decode("u8")
+        rtn[k] = crypt.encode64(str(v))
+    return rtn
