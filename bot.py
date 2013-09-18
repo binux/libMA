@@ -255,6 +255,8 @@ class Bot(object):
                 self.floor_id = explore.next_floor.floor_info.id
                 self.floor_cost = explore.next_floor.floor_info.cost
                 self._print('next floor: %s cost:%s' % (self.floor_id, self.floor_cost))
+            elif explore.progress == 100:
+                self.choose_area()
             if explore.xpath('./user_card'):
                 card_id = explore.user_card.master_card_id
                 master_card = self.ma.master_cards[card_id]
