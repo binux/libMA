@@ -28,34 +28,6 @@ class LevelBot(Bot):
     def _print(self, message):
         print message
 
-    def friends(self):
-        ret = self.ma.friend_notice()
-        for user in ret.xpath('//user'):
-            if self.ma.friends < self.ma.friend_max:
-                self.ma.approve_friend(user.id)
-                self._print('approve friend: %s' % user.name)
-            #else:
-                #self.ma.refuse_friend(user.id)
-                #self._print('refuse friend: %s' % user.name)
-            time.sleep(2)
-        #if self.ma.friends < self.ma.friend_max:
-            #self.ma.add_friend(userid)
-
-    def free_point(self):
-        if self.ma.free_ap_bc_point > 0:
-            self._print('set point')
-            self.ma.pointsetting(ap=0, bc=self.ma.free_ap_bc_point)
-
-    def gacha(self):
-        while self.ma.gacha_ticket:
-            self._print('gacha')
-            self.ma.gacha_buy(0, 0, 2)
-            time.sleep(2)
-        while self.ma.friendship_point > 200:
-            self._print('friendship point')
-            self.ma.gacha_buy(1, 0, 1)
-            time.sleep(2)
-
     card_prority = {
             124: 0,
             8: 1,

@@ -253,7 +253,6 @@ class MA:
     def login(self, login_id, password, server=config.BASE_URL):
         self.BASE_URL = server
         body = self.get("~/login", login_id=login_id, password=password)
-        self.user_id = body.login.user_id
         return body
 
     def masterdata_boss(self, S, revision):
@@ -294,7 +293,9 @@ class MA:
         return body
 
     def mainmenu(self):
-        return self.get("~/mainmenu")
+        body = self.get("~/mainmenu")
+        self.user_id = body.login.user_id
+        return body
 
     def menulist(self):
         return self.get("~/menu/menulist")
@@ -518,6 +519,9 @@ class MA:
 
     def floor(self, area_id):
         return self.get("~/exploration/floor", area_id=area_id)
+
+    def exploration_battle(self, area_id, floor_id):
+        return self.get("~/exploration/battle", area_id=area_id, floor_id=floor_id)
 
     def floor_status(self, area_id, floor_id, check=1):
         return self.get("~/exploration/get_floor", area_id=area_id, floor_id=floor_id, check=check)

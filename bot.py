@@ -5,9 +5,11 @@
 #         http://binux.me
 # Created on 2013-08-24 17:46:08
 
+import os
 import ma
-import random
 import time
+import pickle
+import random
 import config
 
 class Bot(object):
@@ -15,6 +17,8 @@ class Bot(object):
     KEEP_FAIRY_TIME = 10*60
     CHOOSE_CARD_LIMIT = 50
     NCARDS_LIMIT = [3, ]
+    AP_LIMIT = 20
+    OPERATION_TIME = 2
     def __init__(self):
         self.ma = ma.MA()
         self.my_fairy = None
@@ -25,16 +29,28 @@ class Bot(object):
         print message
 
     def login(self, login_id, password, server=None):
-        self.ma.check_inspection()
-        self.ma.notification_post_devicetoken(login_id, password)
-        if server:
-            self.ma.login(login_id, password, server)
-        else:
-            self.ma.login(login_id, password)
+        #need dump masterdata and cards
+        #if os.path.exists('/tmp/cookie.%s' % login_id):
+            #cookie = pickle.load(open('/tmp/cookie.%s' % login_id, 'r'))
+            #self.ma.session.cookies = cookie
+            #try:
+                #self.ma.mainmenu()
+            #except:
+                #self._print('cookie expired.')
+                ##import traceback; traceback.print_exc()
+        if not self.ma.islogin:
+            self.ma.check_inspection()
+            self.ma.notification_post_devicetoken(login_id, password)
+            if server:
+                self.ma.login(login_id, password, server)
+            else:
+                self.ma.login(login_id, password)
+            self.ma.mainmenu()
+            #cookie = self.ma.session.cookies
+            #pickle.dump(cookie, open('/tmp/cookie.%s' % login_id, 'w'))
         assert self.ma.islogin, 'login error!'
-        self.ma.mainmenu()
         self.ma.masterdata_card()
-        self.ma.roundtable_edit()
+        self.ma.roundtable_edit(0)
 
     def rewards(self):
         ret = self.ma.rewardbox()
@@ -43,7 +59,7 @@ class Bot(object):
             ret = self.ma.get_rewards(ids[:20])
             self._print('get reward')
             ids = ids[20:]
-            time.sleep(2)
+            time.sleep(self.OPERATION_TIME)
 
     def choose_area(self, area_id=None):
         areas = self.ma.area()
@@ -97,6 +113,9 @@ class Bot(object):
         return cards
 
     def build_roundtable(self, _type=None, **kwargs):
+        if getattr(config, 'roundtable', {}).get(_type):
+            _type = getattr(config, 'roundtable', {}).get(_type)
+
         if False:
             pass
         elif _type == 'kill':
@@ -157,7 +176,18 @@ class Bot(object):
             if not cards or self.ma.bc < cards[0].cost:
                 return False
         else:
-            return False
+            _cards = _type.split('|')
+            cards = []
+            for _card in _cards:
+                tmp = []
+                _card = _card.strip()
+                for card in self.ma.cards.itervalues():
+                    if card.name == _card or str(card.serial_id) == _card or str(card.master_card_id) == _card:
+                        tmp.append(card)
+                if tmp:
+                    cards.append(sorted(tmp, key=lambda x: x.lv, reverse=True)[0])
+            if not cards or sum([x.cost for x in cards]) > self.ma.bc:
+                return False
 
         if cards != self.ma.roundtable:
             cards = self.adjust_card_order(cards)
@@ -172,6 +202,7 @@ class Bot(object):
         except ma.HeaderError, e:
             if e.code not in (8000, 1010):
                 raise
+            self._print('%s %s' % (e.code, e.message))
             time.sleep(10)
             return False
         self.touched_fairies.add(serial_id)
@@ -186,7 +217,7 @@ class Bot(object):
                 battle_result.special_item.after_count-battle_result.special_item.before_count,
                 battle_result.special_item.after_count))
         self.atk_log[battle.battle_battle.battle_player_list[1].maxhp] = battle.battle_vs_info.player[1].user_card.power
-        return True
+        return battle
 
     def fairy(self):
         self.my_fairy = None
@@ -226,13 +257,11 @@ class Bot(object):
                 self._print('touch fairy: %slv%s by %s' % (fairy.name, fairy.lv, fairy_event.user.name))
                 self.battle(fairy.serial_id, fairy.discoverer_id)
 
-    def explore(self):
+    def explore(self, next_floor=True, next_area=True):
         if self.my_fairy is not None:
             ap_limit = max(self.ma.ap_max, 20)
         else:
-            ap_limit = min(self.ma.ap_max / 2, 20)
-        if self.ma.ap < ap_limit:
-            return
+            ap_limit = min(self.ma.ap_max / 2, max(self.AP_LIMIT, self.floor_cost))
 
         while self.ma.ap >= ap_limit:
             explore = self.ma.explore(self.area_id, self.floor_id).explore
@@ -251,11 +280,11 @@ class Bot(object):
                 self.battle(explore.fairy.serial_id, explore.fairy.discoverer_id)
                 self.my_fairy = explore.fairy
                 ap_limit = max(self.ma.ap_max, 20)
-            if explore.xpath('./next_floor') and explore.next_floor.floor_info.boss_id == 0:
+            if next_floor and explore.xpath('./next_floor') and explore.next_floor.floor_info.boss_id == 0:
                 self.floor_id = explore.next_floor.floor_info.id
                 self.floor_cost = explore.next_floor.floor_info.cost
                 self._print('next floor: %s cost:%s' % (self.floor_id, self.floor_cost))
-            elif explore.progress == 100:
+            elif next_area and explore.progress == 100:
                 self.choose_area()
             if explore.xpath('./user_card'):
                 card_id = explore.user_card.master_card_id
@@ -275,13 +304,15 @@ class Bot(object):
                 "Reward:%s" % getattr(self.ma, 'remaining_rewards', '-')))
 
     def fairy_rewards(self):
-        while len(self.ma.cards) < self.ma.max_card_num - 5:
+        if len(self.ma.cards) < self.ma.max_card_num - 5:
             self.ma.fairy_select()
             self._print('remaining_rewards: %s' % self.ma.remaining_rewards)
             self.ma.fairy_rewards()
+
+    def sell_cards(self):
             to_sell = [x for x in self.ma.cards.values() \
-                    if x.lv == 1 and x.rarity == 1 and not x.holography \
-                    and x.master_card_id != 66]
+                    if x.lv == 1 and x.rarity in (1, 2) and not x.holography \
+                    and x.master_card_id not in (66, 390, 391)]
             #if config.DEBUG:
                 #for each in to_sell:
                     #self._print(' '.join(each.rarity, each.name, each.lv))
@@ -290,14 +321,24 @@ class Bot(object):
             while to_sell:
                 self.ma.card_sell(to_sell[:30])
                 to_sell = to_sell[30:]
+                time.sleep(self.OPERATION_TIME)
             after_gold = self.ma.gold
             self._print('Sell %d cards gold+%s=%s' % (
                 card_len, after_gold-before_gold, after_gold))
 
     def compound(self, base_card, target_lv=77):
         to_compound = [x for x in self.ma.cards.values() \
-                if x.lv == 1 and (x.rarity == 2 or x.master_card_id == 66) \
+                if x.lv == 1 and (x.rarity == 2 or x.master_card_id in (66, )) \
                 and not x.holography]
+        lv3_to_compound = []
+        lv3_master_id_set = set()
+        for card in [x for x in self.ma.cards.values() \
+                if x.lv == 1 and x.rarity == 3 and x.master_card_id not in (391, )]:
+            if card.master_card_id in lv3_master_id_set:
+                lv3_to_compound.append(card)
+            else:
+                lv3_master_id_set.add(card.master_card_id)
+        to_compound += lv3_to_compound
         #if config.DEBUG:
             #for each in to_compound:
                 #self._print(' '.join(each.rarity, each.name, each.lv))
@@ -308,6 +349,43 @@ class Bot(object):
             self._print('%s %s lv%d->%d/%d' % (base_card.rarity, base_card.name,
                 base_card.lv-ret.compound_buildup.lv_diff, base_card.lv, base_card.lv_max))
             to_compound = to_compound[30:]
+            time.sleep(self.OPERATION_TIME)
+        return base_card.lv >= target_lv
+
+    def friends(self, max_friend=None):
+        if max_friend is None:
+            max_friend = self.ma.friend_max
+
+        ret = self.ma.friend_notice()
+        for user in ret.xpath('//user'):
+            if self.ma.friends < max_friend:
+                self.ma.approve_friend(user.id)
+                self._print('approve friend: %s' % user.name)
+                time.sleep(self.OPERATION_TIME)
+            #else:
+                #self.ma.refuse_friend(user.id)
+                #self._print('refuse friend: %s' % user.name)
+        #if self.ma.friends < self.ma.friend_max:
+            #self.ma.add_friend(userid)
+
+    def free_point(self, _type='bc'):
+        ap = 0; bc = 0
+        if _type == 'ap':
+            ap = self.ma.free_ap_bc_point
+        else:
+            bc = self.ma.free_ap_bc_point
+
+        if ap or bc:
+            self._print('set point ap+%s bc+%s' % (ap, bc))
+            self.ma.pointsetting(ap=ap, bc=bc)
+
+    def gacha(self, gacha=False, friend=False):
+        while gacha and self.ma.gacha_ticket:
+            self._print('gacha')
+            self.ma.gacha_buy(0, 0, 2)
+        while friend and self.ma.friendship_point > 200:
+            self._print('friendship point')
+            self.ma.gacha_buy(1, 1, 1)
 
     def run(self, login_id, password, area=None):
         self.login(login_id, password)

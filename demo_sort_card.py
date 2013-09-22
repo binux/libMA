@@ -8,7 +8,7 @@
 import config
 from ma import MA
 
-def sort_card(by, limit=20, reverse=True):
+def sort_card(by, reverse=True):
     ma = MA()
     login = ma.login(config.loginId, config.password)
     ma.masterdata_card()
@@ -19,7 +19,7 @@ def sort_card(by, limit=20, reverse=True):
         card.lvmax_cp = card.lvmax_hp_power / card.cost
 
     return sorted(ma.cards.values(), key=lambda x: getattr(x, by),
-            reverse=reverse)[:limit]
+            reverse=reverse)
 
 if __name__ == '__main__':
     import sys
@@ -29,9 +29,10 @@ if __name__ == '__main__':
         if key.isdigit():
             limit = int(key)
         elif key in ('cp', 'hp_power', 'lvmax_hp_power', 'lvmax_cp', 'hp', 'power',
-                     'rarity', 'sale_price', 'max_lv', 'lvmax_power', 'lvmax_hp'):
+                     'rarity', 'sale_price', 'max_lv', 'lvmax_power', 'lvmax_hp', 'lv'):
             by = key
 
     for card in sort_card(by, limit):
-        print "%s-%d lv%d %s=%s" % (card.name, card.rarity, card.lv,
+        string = u"%s %s-%d lv%d %s=%s" % (card.serial_id, card.name, card.rarity, card.lv,
                                    by, getattr(card, by))
+        print string.encode('utf8')
