@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # debug mode
-DEBUG = True
+DEBUG = False
 PRINT = False
 
 # deviceToken should be a 32 length string,i dont't want to know where it from
