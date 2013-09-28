@@ -124,7 +124,7 @@ class Bot(object):
             cards = []
             masters = set()
             for card in sorted([x for x in self.ma.cards.values() if x.lv > 10],
-                    key=lambda x: x.hp+x.power, reverse=True)[:self.CHOOSE_CARD_LIMIT]:
+                    key=lambda x: (x.hp+x.power)/x.cost, reverse=True)[:self.CHOOSE_CARD_LIMIT]:
                 if card.master_card_id in masters:
                     continue
                 masters.add(card.master_card_id)
@@ -249,7 +249,7 @@ class Bot(object):
                 ret = False
                 if self.atk_log.get(fairy.hp_max):
                     ret = self.build_roundtable('kill', hp=fairy.hp, atk=self.atk_log[fairy.hp_max])
-                ret = ret or self.build_roundtable('high_damage')
+                    ret = ret or self.build_roundtable('high_damage')
             if not ret:
                 ret = self.build_roundtable('low_cost')
 
@@ -257,7 +257,7 @@ class Bot(object):
                 self._print('touch fairy: %slv%s by %s' % (fairy.name, fairy.lv, fairy_event.user.name))
                 self.battle(fairy.serial_id, fairy.discoverer_id)
 
-    def explore(self, next_floor=True, next_area=True):
+    def explore(self, next_floor=True, next_area=True, fairy=True):
         if self.my_fairy is not None:
             ap_limit = max(self.ma.ap_max, 20)
         else:
@@ -275,7 +275,7 @@ class Bot(object):
                 '(LVUP!)' if explore.lvup else '', explore.gold, bikini_str, explore.progress))
 
             # event
-            if explore.xpath('./fairy') and self.build_roundtable('low_cost'):
+            if fairy and explore.xpath('./fairy') and self.build_roundtable('low_cost'):
                 self._print('find fairy: %slv%s hp:%s' % (explore.fairy.name, explore.fairy.lv, explore.fairy.hp))
                 self.battle(explore.fairy.serial_id, explore.fairy.discoverer_id)
                 self.my_fairy = explore.fairy
@@ -292,6 +292,7 @@ class Bot(object):
                 if master_card:
                     self._print('got card: %s-%s%s' % (master_card['name'], master_card['rarity'],
                         ' (HOLO!)' if explore.user_card.holography else '' ))
+            time.sleep(self.OPERATION_TIME)
 
     def report(self):
         self._print("%s-%s(%s%%): AP:%s/%s BC:%s/%s Friends:%s/%s Gold:%s Cards:%s %s%s%s" % (
@@ -309,10 +310,23 @@ class Bot(object):
             self._print('remaining_rewards: %s' % self.ma.remaining_rewards)
             self.ma.fairy_rewards()
 
-    def sell_cards(self):
+    NOT_SOLD_CARDS = (66, 390, 391, 392, 404, 124, 8)
+    def sell_cards(self, max_lv=2):
             to_sell = [x for x in self.ma.cards.values() \
-                    if x.lv == 1 and x.rarity in (1, 2) and not x.holography \
-                    and x.master_card_id not in (66, 390, 391)]
+                    if x.lv == 1 and x.rarity <= min(max_lv, 2) and not x.holography \
+                    and x.master_card_id not in NOT_SOLD_CARDS \
+                    and x.sale_price > 1]
+            lv3_to_sell = []
+            lv3_master_id_set = set()
+            for card in [x for x in self.ma.cards.values() \
+                    if x.lv == 1 and 2 < x.rarity <= max_lv and not x.holography \
+                    and x.master_card_id not in NOT_SOLD_CARDS \
+                    and x.sale_price > 1]:
+                if card.master_card_id in lv3_master_id_set:
+                    lv3_to_sell.append(card)
+                else:
+                    lv3_master_id_set.add(card.master_card_id)
+            to_sell += lv3_to_sell
             #if config.DEBUG:
                 #for each in to_sell:
                     #self._print(' '.join(each.rarity, each.name, each.lv))
@@ -326,14 +340,16 @@ class Bot(object):
             self._print('Sell %d cards gold+%s=%s' % (
                 card_len, after_gold-before_gold, after_gold))
 
-    def compound(self, base_card, target_lv=77):
+    def compound(self, base_card, target_lv=77, max_lv=3):
         to_compound = [x for x in self.ma.cards.values() \
                 if x.lv == 1 and (x.rarity == 2 or x.master_card_id in (66, )) \
                 and not x.holography]
         lv3_to_compound = []
         lv3_master_id_set = set()
         for card in [x for x in self.ma.cards.values() \
-                if x.lv == 1 and x.rarity == 3 and x.master_card_id not in (391, )]:
+                if x.lv == 1 and 2 < x.rarity <= max_lv \
+                and not x.holography \
+                and x.master_card_id not in (391, )]:
             if card.master_card_id in lv3_master_id_set:
                 lv3_to_compound.append(card)
             else:
@@ -344,11 +360,15 @@ class Bot(object):
                 #self._print(' '.join(each.rarity, each.name, each.lv))
         target_lv = min(target_lv, base_card.lv_max)
         while to_compound and base_card.lv < target_lv:
-            ret = self.ma.card_compound(base_card, to_compound[:30])
+            if target_lv - base_card.lv <= 5:
+                ret = self.ma.card_compound(base_card, to_compound[:10])
+                to_compound = to_compound[10:]
+            else:
+                ret = self.ma.card_compound(base_card, to_compound[:30])
+                to_compound = to_compound[30:]
             base_card = self.ma.cards[base_card.serial_id]
             self._print('%s %s lv%d->%d/%d' % (base_card.rarity, base_card.name,
                 base_card.lv-ret.compound_buildup.lv_diff, base_card.lv, base_card.lv_max))
-            to_compound = to_compound[30:]
             time.sleep(self.OPERATION_TIME)
         return base_card.lv >= target_lv
 

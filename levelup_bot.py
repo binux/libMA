@@ -13,6 +13,7 @@ from lxml.etree import XMLSyntaxError
 
 class LevelBot(Bot):
     BATTLE_COOLDOWN = 10
+    OPERATION_TIME = 0.5
     def login(self, login_id, password, server=None):
         self.login_id = login_id
         self.ma.check_inspection()
@@ -57,7 +58,7 @@ class LevelBot(Bot):
                     if e.code == 8000:
                         self._print(e.message)
                         break
-                time.sleep(2)
+                time.sleep(self.OPERATION_TIME)
                 add_cards = add_cards[30:]
                 self._print('compound %slv%s' % (card.name, card.lv))
 
@@ -66,6 +67,7 @@ class LevelBot(Bot):
         for userid in ids:
             try:
                 player = self.ma.playerinfo(userid).player_info.user
+                time.sleep(self.OPERATION_TIME)
             except Exception, e:
                 self._print(e)
                 time.sleep(3)
@@ -91,18 +93,18 @@ class LevelBot(Bot):
 
     def explore(self):
         areas = self.ma.area()
-        for area in areas.xpath('//area_info'):
-            if area.prog_area < 100:
-                floors = self.ma.floor(area.id).xpath('//floor_info') 
+        for _area in areas.xpath('//area_info'):
+            if _area.area_type == 1:
+                floors = self.ma.floor(_area.id).xpath('//floor_info') 
                 _, floor = max([(x.id, x) for x in floors if not x.boss_id])
-                break
+                area = _area
         self._print('explore area:%s %s%% floor:%s' % (area.name, area.prog_area, floor.id))
         while self.ma.ap > floor.cost:
             ret = self.ma.explore(area.id, floor.id).explore
             self._print('floor:%s event:%s exp-%s=%s%s gold+%s progress=%s%%' % (
                 floor.id, ret.event_type, ret.get_exp, ret.next_exp,
                 '(LVUP!)' if ret.lvup else '', ret.gold, ret.progress))
-            time.sleep(0.5)
+            time.sleep(self.OPERATION_TIME)
 
     def story(self):
         ret = self.ma.story_getoutline()
@@ -157,14 +159,20 @@ if __name__ == '__main__':
     import sys
     from db import battledb
     bot = LevelBot()
+    print '----------------------', sys.argv[1], '--------------------------'
     bot.login(sys.argv[1], sys.argv[2])
-    import IPython; IPython.embed()
-    for player in bot.scan_player(range(int(sys.argv[3]), int(sys.argv[4]))):
-        print player.id, unicode(player.name), player.deck_rank, player.leader_card.hp, unicode(player.last_login)
-        battledb.add(player.id, name=unicode(player.name),
-                hp=int(player.leader_card.hp),
-                atk=int(player.leader_card.power),
-                deck_rank=int(player.deck_rank),
-                level=int(player.town_level),
-                leader_card=int(player.leader_card.master_card_id),
-                )
+    bot.report()
+    bot.free_point('ap')
+    while bot.ma.ap > 5:
+        bot.explore()
+        bot.free_point('ap')
+    #import IPython; IPython.embed()
+    #for player in bot.scan_player(range(int(sys.argv[3]), int(sys.argv[4]))):
+        #print player.id, unicode(player.name), player.deck_rank, player.leader_card.hp, unicode(player.last_login)
+        #battledb.add(player.id, name=unicode(player.name),
+                #hp=int(player.leader_card.hp),
+                #atk=int(player.leader_card.power),
+                #deck_rank=int(player.deck_rank),
+                #level=int(player.town_level),
+                #leader_card=int(player.leader_card.master_card_id),
+                #)

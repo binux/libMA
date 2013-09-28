@@ -617,6 +617,8 @@ class MA:
         return ret_json
 
 if __name__ == '__main__':
+    config.DEBUG = True
+    config.PRINT = True
     ma = MA()
     ma.check_inspection()
     ma.notification_post_devicetoken(config.loginId, config.password)

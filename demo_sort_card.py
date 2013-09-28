@@ -33,6 +33,6 @@ if __name__ == '__main__':
             by = key
 
     for card in sort_card(by, limit):
-        string = u"%s %s-%d lv%d %s=%s" % (card.serial_id, card.name, card.rarity, card.lv,
+        string = u"%s %s-%d lv%d/%d %s=%s" % (card.serial_id, card.name, card.rarity, card.lv, card.lv_max,
                                    by, getattr(card, by))
         print string.encode('utf8')

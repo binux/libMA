@@ -13,11 +13,11 @@ from bot import Bot
 if __name__ == '__main__':
     bot = Bot()
     bot.login(config.loginId, config.password)
+    bot.fairy()
     ok = False
     while not ok:
-        bot.fairy()
         bot.report()
         bot.fairy_rewards()
-        bot.sell_cards()
+        bot.sell_cards(1)
         base_card = bot.ma.cards[int(sys.argv[1])]
-        ok = bot.compound(base_card, 110)
+        ok = bot.compound(base_card, 77)
