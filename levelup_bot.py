@@ -147,7 +147,7 @@ class LevelBot(Bot):
     def task_check(self):
         self.rewards()
         self.friends()
-        self.free_point()
+        #self.free_point()
         self.gacha()
         self.compound()
 

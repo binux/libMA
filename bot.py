@@ -314,13 +314,13 @@ class Bot(object):
     def sell_cards(self, max_lv=2):
             to_sell = [x for x in self.ma.cards.values() \
                     if x.lv == 1 and x.rarity <= min(max_lv, 2) and not x.holography \
-                    and x.master_card_id not in NOT_SOLD_CARDS \
+                    and x.master_card_id not in self.NOT_SOLD_CARDS \
                     and x.sale_price > 1]
             lv3_to_sell = []
             lv3_master_id_set = set()
             for card in [x for x in self.ma.cards.values() \
                     if x.lv == 1 and 2 < x.rarity <= max_lv and not x.holography \
-                    and x.master_card_id not in NOT_SOLD_CARDS \
+                    and x.master_card_id not in self.NOT_SOLD_CARDS \
                     and x.sale_price > 1]:
                 if card.master_card_id in lv3_master_id_set:
                     lv3_to_sell.append(card)

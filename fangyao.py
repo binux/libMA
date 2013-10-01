@@ -89,12 +89,11 @@ class JueXingBot(Bot):
                         self.battle(fairy.serial_id, fairy.discoverer_id)
                         return True
                     else:
-                        raise Exception('no bc!')
+                        raise Exception("build round table error")
                 elif ret.battle_result.winner:
                     return True
             else:
-                self._print('build round table error.')
-                return False
+                raise Exception("build round table error")
 
 if __name__ == '__main__':
     main_bot = JueXingBot()
@@ -143,7 +142,7 @@ if __name__ == '__main__':
             bot.free_point('ap')
             bot.report()
             if len(main_bot.ma.cards) >= 200:
-                main_bot.sell_cards()
+                main_bot.sell_cards(3)
             if not main_bot._fairy(bot.ma.user_id):
                 bot.ma.remove_friend(main_bot.ma.user_id)
                 print "friend removed."

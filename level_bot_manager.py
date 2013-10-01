@@ -36,6 +36,7 @@ class WebLevelBot(LevelBot):
             fp.write('%s ' % datetime.datetime.now())
             fp.write(message.encode('utf8') if isinstance(message, unicode) else message)
             fp.write('\n')
+        pass
 
 stop_set = set()
 running_set = set()
@@ -94,6 +95,8 @@ def _run_task(bot, account, battle_set):
             break
         if not bot.build_roundtable('battle'):
             break
+        if '|ap' in account.get('invite', '') and bot.ma.ap > 10:
+            bot.explore()
 
         # battle
         try:
@@ -118,6 +121,10 @@ def _run_task(bot, account, battle_set):
             account['lv'] = bot.ma.level
             account['status'] = 'RUNNING'
             accountdb.update(**account)
+            if '|ap' in account.get('invite', ''):
+                bot.free_point('ap')
+            else:
+                bot.free_point('bc')
 
         # low bc
         if bot.ma.bc < bot.ma.cost:
