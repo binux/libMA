@@ -38,16 +38,15 @@ class Bot(object):
             #except:
                 #self._print('cookie expired.')
                 ##import traceback; traceback.print_exc()
-        if not self.ma.islogin:
-            self.ma.check_inspection()
-            self.ma.notification_post_devicetoken(login_id, password)
-            if server:
-                self.ma.login(login_id, password, server)
-            else:
-                self.ma.login(login_id, password)
-            self.ma.mainmenu()
-            #cookie = self.ma.session.cookies
-            #pickle.dump(cookie, open('/tmp/cookie.%s' % login_id, 'w'))
+        self.ma.check_inspection()
+        self.ma.notification_post_devicetoken(login_id, password)
+        if server:
+            self.ma.login(login_id, password, server)
+        else:
+            self.ma.login(login_id, password)
+        self.ma.mainmenu()
+        #cookie = self.ma.session.cookies
+        #pickle.dump(cookie, open('/tmp/cookie.%s' % login_id, 'w'))
         assert self.ma.islogin, 'login error!'
         self.ma.masterdata_card()
         self.ma.roundtable_edit(0)
@@ -329,7 +328,7 @@ class Bot(object):
             to_sell += lv3_to_sell
             #if config.DEBUG:
                 #for each in to_sell:
-                    #self._print(' '.join(each.rarity, each.name, each.lv))
+                    #self._print(' '.join(map(unicode, (each.rarity, each.name, each.lv))))
             before_gold = self.ma.gold
             card_len = len(to_sell)
             while to_sell:
@@ -399,13 +398,13 @@ class Bot(object):
             self._print('set point ap+%s bc+%s' % (ap, bc))
             self.ma.pointsetting(ap=ap, bc=bc)
 
-    def gacha(self, gacha=False, friend=False):
+    def gacha(self, gacha=False, friend=False, auto_build=1):
         while gacha and self.ma.gacha_ticket:
             self._print('gacha')
             self.ma.gacha_buy(0, 0, 2)
         while friend and self.ma.friendship_point > 200:
             self._print('friendship point')
-            self.ma.gacha_buy(1, 1, 1)
+            self.ma.gacha_buy(1, auto_build, 1)
 
     def run(self, login_id, password, area=None):
         self.login(login_id, password)
