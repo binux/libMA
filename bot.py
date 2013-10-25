@@ -66,20 +66,27 @@ class Bot(object):
             self._print('%s %s %s' % (area.id, area.name, area.prog_area))
         if area_id and str(area_id) not in areas.xpath('//area_info/id/text()'):
             area_id = None
+
         if not area_id:
             for area in areas.xpath('//area_info'):
                 if area.prog_area < 100:
+                    floors = self.ma.floor(area_id).xpath('//floor_info') 
+                    _, floor = max([(x.id, x) for x in floors])
                     area_id = area.id
+                    if floor.boss_id:
+                        continue
                     break
+            if floor.boss_id:
+                _, floor = max([(x.id, x) for x in floors if not x.boss_id])
         else:
             for area in areas.xpath('//area_info'):
                 if area.id == int(area_id):
+                    floors = self.ma.floor(area_id).xpath('//floor_info') 
+                    _, floor = max([(x.id, x) for x in floors if not x.boss_id])
                     break
-        self.area_id = area_id
 
-        floors = self.ma.floor(area_id).xpath('//floor_info') 
-        _, floor = max([(x.id, x) for x in floors if not x.boss_id])
         self._print('choose area:%s-%s' % (area.name, floor.id))
+        self.area_id = area_id
         self.floor_id = floor.id
         self.floor_cost = floor.cost
 
@@ -412,7 +419,7 @@ class Bot(object):
         while True:
             self.report()
             self.fairy()
-            self.explore()
+            self.explore(next_area=(False if area else True))
             time.sleep(self.SLEEP_TIME)
 
 if __name__ == '__main__':
