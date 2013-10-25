@@ -70,9 +70,9 @@ class Bot(object):
         if not area_id:
             for area in areas.xpath('//area_info'):
                 if area.prog_area < 100:
+                    area_id = area.id
                     floors = self.ma.floor(area_id).xpath('//floor_info') 
                     _, floor = max([(x.id, x) for x in floors])
-                    area_id = area.id
                     if floor.boss_id:
                         continue
                     break
