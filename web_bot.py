@@ -20,6 +20,7 @@ class WebSocketBot(Bot):
     CHOOSE_CARD_LIMIT = 30
     NCARDS_LIMIT = [3, ]
     master_cards = {}   # shared master cards
+    card_rev = None
     atk_log = {}   # shared atk log
     connected = 0
     def __init__(self, ws):
@@ -32,11 +33,14 @@ class WebSocketBot(Bot):
         self.ma.login(login_id, password)
         assert self.ma.islogin, 'login error!'
         self.ma.mainmenu()
-        if not self.__class__.master_cards:
+        if not self.__class__.master_cards or self.__class__.card_rev != self.ma.revision['card_rev']:
             self.ma.masterdata_card()
-            self.__class__.master_cards = self.ma.master_cards
+            self.__class__.master_cards.clear()
+            self.__class__.master_cards.update(self.ma.master_cards)
+            self.__class__.card_rev = self.ma._card_rev
+            self.ma.master_cards = self.__class__.master_cards
         else:
-            self.ma._master_cards = self.__class__.master_cards
+            self.ma.master_cards = self.__class__.master_cards
         self.ma.roundtable_edit()
 
     def __del__(self):
