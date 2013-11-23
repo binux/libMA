@@ -220,8 +220,8 @@ class Bot(object):
                 '(win)' if battle_result.winner else '',
                 battle_result.before_exp-battle_result.after_exp, battle_result.after_exp,
                 battle_result.after_gold-battle_result.before_gold, battle_result.after_gold,
-                battle_result.special_item.after_count-battle_result.special_item.before_count,
-                battle_result.special_item.after_count))
+                hasattr(battle_result, "special_item") and battle_result.special_item.after_count-battle_result.special_item.before_count,
+                hasattr(battle_result, "special_item") and battle_result.special_item.after_count))
         self.atk_log[battle.battle_battle.battle_player_list[1].maxhp] = battle.battle_vs_info.player[1].user_card.power
         return battle
 

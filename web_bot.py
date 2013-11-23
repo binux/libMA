@@ -36,7 +36,7 @@ class WebSocketBot(Bot):
             self.ma.masterdata_card()
             self.__class__.master_cards = self.ma.master_cards
         else:
-            self.ma.master_cards = self.__class__.master_cards
+            self.ma._master_cards = self.__class__.master_cards
         self.ma.roundtable_edit()
 
     def __del__(self):

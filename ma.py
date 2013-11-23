@@ -133,21 +133,23 @@ class MA:
         kwargs.update(params)
         params = _cryptParams(kwargs)
         response = self.session.post(self.abs_path(resource), params, params={"cyt": 1})
+        if response.status_code != 200:
+            time.sleep(1)
+            return self.cat(resource, params, **kwargs)
         data = crypt.decode(response.content)
         data = re.sub("&(?!amp;)", "&amp;", data)
         return data
 
     def parse_header(self, header):
         error_code = int(header.xpath('./error/code/text()')[0])
-        if self.ignore_error:
+        if error_code:
             error_message = unicode(header.xpath('./error/message/text()')[0])
-            self.last_message = error_message
-        elif error_code == 1010:
-            error_message = unicode(header.xpath('./error/message/text()')[0])
-            self.last_message = error_message
-        elif error_code:
-            error_message = unicode(header.xpath('./error/message/text()')[0])
-            raise HeaderError(error_code, error_message)
+            error = HeaderError(error_code, error_message)
+            if error_code == 1010 or self.ignore_error:
+                self.last_error = error
+                self.last_message = error_message
+            else:
+                raise error
 
         self.session_id = header.xpath('./session_id/text()')[0]
 
@@ -263,14 +265,17 @@ class MA:
 
     @property
     def master_cards(self):
+        if getattr(self, "_master_cards", None) and self._card_rev == self.revision['card_rev']:
+            return self._master_cards
         self.masterdata_card()
-        return self.master_cards
+        return self._master_cards
 
     def masterdata_card(self):
         body = self.get("~/masterdata/card/update")
 
         # save it
-        self.master_cards = {}
+        self._card_rev = self.revision['card_rev']
+        self._master_cards = {}
         for each in body.xpath('//card'):
             card = {}
             for attr in ('character_id/i', 'base_hp/i', 'extra/i', 'base_holo_hp/i', 'base_power/i',
@@ -288,7 +293,7 @@ class MA:
                 data = each.xpath('./%s/text()' % attr)
                 if data:
                     card[attr] = make_up(data[0])
-            self.master_cards[card['master_card_id']] = card
+            self._master_cards[card['master_card_id']] = card
 
         return body
 
