@@ -253,12 +253,16 @@ class MA:
             token = hashlib.md5(hashlib.sha1(config.deviceToken+login_id+password).hexdigest()).hexdigest()
             token += str(random.randint(0, 1000000))
         self.token = token
+        # only first 14 works..
+        password = password[:14]
         return self.cat("~/notification/post_devicetoken", login_id=login_id, password=password, app=app,
                 token=token.encode("base64").replace("\n", ""), S=S) 
 
     def regist(self, login_id, password, invitation_id, platform=2, device_id=None):
         if device_id is None:
             device_id = self.device_id
+        # only first 14 works..
+        password = password[:14]
         return self.get("~/regist", login_id=login_id, password=password, invitation_id=invitation_id,
                         platform=platform, param=device_id)
 
@@ -267,6 +271,8 @@ class MA:
 
     def login(self, login_id, password, server=config.BASE_URL):
         self.BASE_URL = server
+        # only first 14 works..
+        password = password[:14]
         body = self.get("~/login", login_id=login_id, password=password)
         return body
 
