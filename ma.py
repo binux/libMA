@@ -131,13 +131,26 @@ class MA:
 
     def cat(self, resource, params={}, **kwargs):
         kwargs.update(params)
-        params = _cryptParams(kwargs)
+
+        if resource in ("~/login", "~/regist"):
+            params = _cryptParams(kwargs, type="RSA")
+        else:
+            params = _cryptParams(kwargs)
+
         response = self.session.post(self.abs_path(resource), params, params={"cyt": 1})
         if response.status_code != 200:
             time.sleep(1)
             return self.cat(resource, params, **kwargs)
-        data = crypt.decode(response.content)
+
+        if resource == "~/check_inspection":
+            data = crypt.aes_decode(response.content, key="rBwj1MIAivVN222b")
+        else:
+            data = crypt.aes_decode(response.content)
+
         data = re.sub("&(?!amp;)", "&amp;", data)
+        if config.DEBUG and config.PRINT:
+            print data
+
         return data
 
     def parse_header(self, header):
@@ -221,7 +234,7 @@ class MA:
         self.parse_header(xml.xpath('/response/header')[0])
 
         body = xml.xpath('/response/body')[0]
-        if config.DEBUG and config.PRINT:
+        if config.PRINT:
             print etree.tostring(body, pretty_print=True)
         return body
 
@@ -443,7 +456,7 @@ class MA:
         return self.get("~/comment/send", comment_id=comment_id, user_id=user_id, like_message=like_message)
 
 
-    def save_deck_card(self, cards, leader=None):
+    def save_deck_card(self, cards, leader=None, deck_id=1):
         if isinstance(cards, list):
             _cards = []
             for card in cards:
@@ -461,13 +474,13 @@ class MA:
         elif isinstance(leader, Card):
             leader = leader.serial_id
 
-        data = self.get("~/cardselect/savedeckcard", C=cards, lr=leader)
+        data = self.get("~/cardselect/savedeckcard", C=cards, lr=leader, deck_id=deck_id)
         self.roundtable = [self.cards[int(x)] for x in \
                 data.xpath('//deck_cards/text()')[0].split(',') if x != 'empty']
         return data
 
-    def roundtable_edit(self, move=1):
-        data = self.get("~/roundtable/edit", move=move)
+    def roundtable_edit(self, move=1, deck_id=None):
+        data = self.get("~/roundtable/edit", move=move, deck_id=deck_id)
         self.roundtable = [self.cards[int(x)] for x in \
                 data.xpath('//deck_cards/text()')[0].split(',') if x != 'empty']
         return data
@@ -543,22 +556,22 @@ class MA:
         '''
         return self.get("~/exploration/explore", area_id=area_id, floor_id=floor_id, auto_build=auto_build)
 
-    def fairy_floor(self, serial_id, user_id, check=1):
-        return self.get("~/exploration/fairy_floor", serial_id=serial_id, user_id=user_id, check=1)
+    def fairy_floor(self, serial_id, user_id, race_type=11, check=1):
+        return self.get("~/exploration/fairy_floor", serial_id=serial_id, user_id=user_id, race_type=race_type, check=check)
 
-    def fairy_battle(self, serial_id, user_id):
+    def fairy_battle(self, serial_id, user_id, race_type=11):
         if time.time() - self.battle_cooldown < self.BATTLE_COOLDOWN:
             time.sleep(self.BATTLE_COOLDOWN - time.time() + self.battle_cooldown)
-        ret = self.get("~/exploration/fairybattle", serial_id=serial_id, user_id=user_id)
+        ret = self.get("~/exploration/fairybattle", serial_id=serial_id, user_id=user_id, race_type=race_type)
         self.battle_cooldown = time.time()
         return ret
 
-    def fairy_history(self, serial_id, user_id):
-        return self.get("~/exploration/fairyhistory", serial_id=serial_id, user_id=user_id)
+    def fairy_history(self, serial_id, user_id, race_type=11):
+        return self.get("~/exploration/fairyhistory", serial_id=serial_id, user_id=user_id, race_type=race_type)
 
     # what for?
-    def fairy_lose(self, serial_id, user_id):
-        return self.get("~/exploration/fairy_lose", serial_id=serial_id, user_id=user_id)
+    def fairy_lose(self, serial_id, user_id, race_type=11):
+        return self.get("~/exploration/fairy_lose", serial_id=serial_id, user_id=user_id, race_type=race_type)
 
     # error api?
     def fairy_win(self, serial_id, user_id):
@@ -620,6 +633,36 @@ class MA:
         ret_json = ret.json()
         assert ret_json['code'] == 1, 'push active failed!'
         return ret_json
+
+    # guild
+    def guild_main(self):
+        return self.get("~/guild/main")
+
+    def guild_search(self, name):
+        return self.get("~/guild/search", name=name)
+
+    def guild_member_list(self, guild_id, move=1):
+        return self.get("~/guild/member/list", move=move, guild_id=guild_id)
+
+    # storage
+    def storage_list(self):
+        return self.get("~/storage/storage_list")
+
+    def storage_deposit(self, serial_id):
+        if isinstance(serial_id, list):
+            serial_id = ",".join(map(lambda x: str(x.serial_id) if isinstance(x, Card) else str(x),
+                serial_id))
+        elif isinstance(serial_id, Card):
+            serial_id = serial_id.serial_id
+        return self.get("~/storage/deposit", serial_id=serial_id)
+
+    def withdraw(self, serial_id):
+        if isinstance(serial_id, list):
+            serial_id = ",".join(map(lambda x: str(x.serial_id) if isinstance(x, Card) else str(x),
+                serial_id))
+        elif isinstance(serial_id, Card):
+            serial_id = serial_id.serial_id
+        return self.get("~/storage/withdraw", serial_id=serial_id)
 
 if __name__ == '__main__':
     config.DEBUG = True

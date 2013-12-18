@@ -17,10 +17,10 @@ class StickyMaster(controller.Master):
             print """---------------------------            
     def %s(%s):
         return self.get(%s)""" % (path.split("/")[-1],
-                                  ", ".join(["self", ] + msg.get_form_urlencoded().keys()),
+                                  ", ".join(["self", ] + [x for x in msg.get_form_urlencoded().keys() if x != 'K']),
                                   
                                   ", ".join(['"%s"' % path.replace("/connect/app", "~"), ]\
-                                          +["%s=%s" % (x, x) for x in msg.get_form_urlencoded().keys()]))
+                                          +["%s=%s" % (x, x) for x in msg.get_form_urlencoded().keys() if x != 'K']))
 
         print msg.get_url()
         if msg.method == 'POST':

@@ -22,10 +22,12 @@ BASE_URL = "http://game1-CBT.ma.sdo.com:10001"
 ACTIVE_URL = "http://push.mam.sdo.com:8000/active.php"
 
 # starts with Million/100
-USER_AGENT = "Million/101 (ibbot; ibot; 9.9) ib/ibbot/ibbot:9.9/IMM76L/ibbot/test-keys"
+USER_AGENT = "Million/102 (aries; aries; 4.1.1) Xiaomi/aries/aries:4.1.1/JRO03L/3.12.13:user/release-keys"
 
 # AESkey,god knows where it from
-AESkey = "rBwj1MIAivVN222b"
+AESkey = "011218525486l6u1"
+
+RSAkey = """MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAM5U06JAbYWdRBrnMdE2bEuDmWgUav7xNKm7i8s1Uy/\nfvpvfxLeoWowLGIBKz0kDLIvhuLV8Lv4XV0+aXdl2j4kCAwEAAQ==""".decode("base64")
 
 #PUSH SERVER need this key
 DES_KEY = "Fwe3;$84@kl3221554*G(|d@"

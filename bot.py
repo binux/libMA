@@ -202,9 +202,9 @@ class Bot(object):
             self.ma.save_deck_card(cards)
         return True
 
-    def battle(self, serial_id, user_id):
+    def battle(self, serial_id, user_id, race_type=2):
         try:
-            battle = self.ma.fairy_battle(serial_id, user_id)
+            battle = self.ma.fairy_battle(serial_id, user_id, race_type=race_type)
         except ma.HeaderError, e:
             if e.code not in (8000, 1010):
                 raise
@@ -239,7 +239,8 @@ class Bot(object):
             if self.ma.bc < self.ma.bc_max - 1 and fairy_event.fairy.serial_id in self.touched_fairies: # touched
                 continue
 
-            fairy = self.ma.fairy_floor(fairy_event.fairy.serial_id, fairy_event.user.id).xpath('//explore/fairy')[0]
+            fairy = self.ma.fairy_floor(fairy_event.fairy.serial_id, fairy_event.user.id,
+                    race_type=fairy_event.fairy.race_type).xpath('//explore/fairy')[0]
             if fairy.hp <= 0: # killed
                 continue
             if str(self.ma.user_id) in fairy.xpath('//attacker/user_id/text()'):
@@ -261,7 +262,7 @@ class Bot(object):
 
             if ret:
                 self._print('touch fairy: %slv%s by %s' % (fairy.name, fairy.lv, fairy_event.user.name))
-                self.battle(fairy.serial_id, fairy.discoverer_id)
+                self.battle(fairy.serial_id, fairy.discoverer_id, fairy_event.fairy.race_type)
 
     def explore(self, next_floor=True, next_area=True, fairy=True):
         if self.my_fairy is not None:
@@ -274,7 +275,7 @@ class Bot(object):
             
             bikini_str = ''
             if hasattr(explore, 'special_item') and explore.special_item.after_count:
-                bikini_str = 'bikini+%s=%s ' % (explore.special_item.after_count - explore.special_item.before_count,
+                bikini_str = 'item+%s=%s ' % (explore.special_item.after_count - explore.special_item.before_count,
                         explore.special_item.after_count)
             self._print('floor:%s event:%s exp-%s=%s%s gold+%s %sprogress=%s%%' % (
                 self.floor_id, explore.event_type, explore.get_exp, explore.next_exp,
@@ -315,6 +316,8 @@ class Bot(object):
             self.ma.fairy_select()
             self._print('remaining_rewards: %s' % self.ma.remaining_rewards)
             self.ma.fairy_rewards()
+            return True
+        return False
 
     NOT_SOLD_CARDS = (66, 390, 391, 392, 404, 124, 8)
     def sell_cards(self, max_lv=2):
