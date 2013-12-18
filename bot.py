@@ -68,7 +68,7 @@ class Bot(object):
             area_id = None
 
         if not area_id:
-            for area in sorted(areas.xpath('//area_info'), key=lambda x: (x.race_type == 12, -x.area_type, -x.id)):
+            for area in sorted(areas.xpath('//area_info'), key=lambda x: (x.race_type == 12, -x.area_type, x.prog_area, -x.id)):
                 if area.prog_area < 100:
                     area_id = area.id
                     floors = self.ma.floor(area_id).xpath('//floor_info') 
