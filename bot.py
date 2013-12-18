@@ -68,14 +68,13 @@ class Bot(object):
             area_id = None
 
         if not area_id:
-            for area in sorted(areas.xpath('//area_info'), key=lambda x: (x.race_type == 12, -x.area_type, x.prog_area, -x.id)):
-                if area.prog_area < 100:
-                    area_id = area.id
-                    floors = self.ma.floor(area_id).xpath('//floor_info') 
-                    _, floor = max([(x.id, x) for x in floors])
-                    if floor.boss_id:
-                        continue
-                    break
+            for area in sorted(areas.xpath('//area_info'), key=lambda x: (x.race_type == 12, -x.area_type, x.prog_area == 100, -x.id)):
+                area_id = area.id
+                floors = self.ma.floor(area_id).xpath('//floor_info') 
+                _, floor = max([(x.id, x) for x in floors])
+                if floor.boss_id:
+                    continue
+                break
             if floor.boss_id:
                 _, floor = max([(x.id, x) for x in floors if not x.boss_id])
         else:
