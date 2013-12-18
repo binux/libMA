@@ -36,7 +36,7 @@ class Crypt(object):
 
     def rsa_encode(self, data, key=None):
         cipher = PKCS1_v1_5.new(RSA.importKey(key)) if key else self.rsa_cipher
-        return cipher.encrypt(data)
+        return cipher.encrypt(_pad_(data))
 
     def rsa_decode(self, data, key=None):
         try:
