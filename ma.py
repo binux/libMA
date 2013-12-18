@@ -556,21 +556,21 @@ class MA:
         '''
         return self.get("~/exploration/explore", area_id=area_id, floor_id=floor_id, auto_build=auto_build)
 
-    def fairy_floor(self, serial_id, user_id, race_type=11, check=1):
+    def fairy_floor(self, serial_id, user_id, race_type, check=1):
         return self.get("~/exploration/fairy_floor", serial_id=serial_id, user_id=user_id, race_type=race_type, check=check)
 
-    def fairy_battle(self, serial_id, user_id, race_type=11):
+    def fairy_battle(self, serial_id, user_id, race_type):
         if time.time() - self.battle_cooldown < self.BATTLE_COOLDOWN:
             time.sleep(self.BATTLE_COOLDOWN - time.time() + self.battle_cooldown)
         ret = self.get("~/exploration/fairybattle", serial_id=serial_id, user_id=user_id, race_type=race_type)
         self.battle_cooldown = time.time()
         return ret
 
-    def fairy_history(self, serial_id, user_id, race_type=11):
+    def fairy_history(self, serial_id, user_id, race_type):
         return self.get("~/exploration/fairyhistory", serial_id=serial_id, user_id=user_id, race_type=race_type)
 
     # what for?
-    def fairy_lose(self, serial_id, user_id, race_type=11):
+    def fairy_lose(self, serial_id, user_id, race_type):
         return self.get("~/exploration/fairy_lose", serial_id=serial_id, user_id=user_id, race_type=race_type)
 
     # error api?

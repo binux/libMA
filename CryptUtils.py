@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
+import random
+import string
 import base64
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
@@ -73,7 +74,7 @@ crypt = Crypt()
 
 def _cryptParams(params, type="AES", key=None):
     if key is None:
-        key = os.urandom(16)
+        key = ''.join(random.choice(string.ascii_lowercase) for i in range(16))
     rtn = {}
     for k, v in params.items():
         if isinstance(v,unicode):

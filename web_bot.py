@@ -31,6 +31,7 @@ class WebSocketBot(Bot):
 
     def login(self, login_id, password):
         self.ma.login(login_id, password)
+        self._print("by binux@ma.binux.me")
         assert self.ma.islogin, 'login error!'
         self.ma.mainmenu()
         if not self.__class__.master_cards or self.__class__.card_rev != self.ma.revision['card_rev']:

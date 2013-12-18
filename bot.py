@@ -68,7 +68,7 @@ class Bot(object):
             area_id = None
 
         if not area_id:
-            for area in areas.xpath('//area_info'):
+            for area in sorted(areas.xpath('//area_info'), key=lambda x: (x.race_type == 12, -x.area_type, -x.id)):
                 if area.prog_area < 100:
                     area_id = area.id
                     floors = self.ma.floor(area_id).xpath('//floor_info') 
@@ -202,9 +202,9 @@ class Bot(object):
             self.ma.save_deck_card(cards)
         return True
 
-    def battle(self, serial_id, user_id, race_type=2):
+    def battle(self, serial_id, user_id, race_type):
         try:
-            battle = self.ma.fairy_battle(serial_id, user_id, race_type=race_type)
+            battle = self.ma.fairy_battle(serial_id, user_id, race_type)
         except ma.HeaderError, e:
             if e.code not in (8000, 1010):
                 raise
@@ -213,7 +213,7 @@ class Bot(object):
             return False
         self.touched_fairies.add(serial_id)
         battle_result = battle.battle_result
-        self._print('hp:%s atk:%s damage:%s%s exp-%s=%s gold+%s=%s bikini+%s=%s' % (
+        self._print('hp:%s atk:%s damage:%s%s exp-%s=%s gold+%s=%s item+%s=%s' % (
                 battle.battle_battle.battle_player_list[1].hp, battle.battle_vs_info.player[1].user_card.power,
                 sum([x.attack_damage for x in battle.xpath('//battle_action_list') if \
                         hasattr(x, 'attack_damage') and x.action_player == 0]),
@@ -240,7 +240,7 @@ class Bot(object):
                 continue
 
             fairy = self.ma.fairy_floor(fairy_event.fairy.serial_id, fairy_event.user.id,
-                    race_type=fairy_event.fairy.race_type).xpath('//explore/fairy')[0]
+                    fairy_event.fairy.race_type).xpath('//explore/fairy')[0]
             if fairy.hp <= 0: # killed
                 continue
             if str(self.ma.user_id) in fairy.xpath('//attacker/user_id/text()'):
@@ -284,7 +284,7 @@ class Bot(object):
             # event
             if fairy and explore.xpath('./fairy') and self.build_roundtable('low_cost'):
                 self._print('find fairy: %slv%s hp:%s' % (explore.fairy.name, explore.fairy.lv, explore.fairy.hp))
-                self.battle(explore.fairy.serial_id, explore.fairy.discoverer_id)
+                self.battle(explore.fairy.serial_id, explore.fairy.discoverer_id, explore.fairy.race_type)
                 self.my_fairy = explore.fairy
                 ap_limit = max(self.ma.ap_max, 20)
             if next_floor and explore.xpath('./next_floor') and explore.next_floor.floor_info.boss_id == 0:
