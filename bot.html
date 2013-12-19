@@ -17,6 +17,7 @@
         login_id: <input name=id />
         password: <input type=password name=pwd />
         area_id: <input name=area />
+        <input type=checkbox name=offline /> offline
         <input id=submit type=submit value=login />
       </form>
     </section>
@@ -37,8 +38,9 @@
       }
       var login_id = form.id.value,
           password = form.pwd.value,
-          area = form.area.value;
-      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area);
+          area = form.area.value,
+          offline = form.offline.checked && "1" || "";
+      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline);
       ws.onopen = function() {
         log.innerHTML += "<br />connected.";
       };

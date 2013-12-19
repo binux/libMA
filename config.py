@@ -35,6 +35,8 @@ DES_KEY = "Fwe3;$84@kl3221554*G(|d@"
 tasoo_uid = None
 tasoo_pwd = None
 
+allow_offline = []
+
 try:
     from local_config import *
 except ImportError:

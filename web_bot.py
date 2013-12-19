@@ -9,6 +9,7 @@ import ma
 import time
 import socket
 import gevent
+import config
 import gevent.monkey
 from geventwebsocket import WebSocketError
 from geventwebsocket.handler import WebSocketHandler
@@ -25,6 +26,7 @@ class WebSocketBot(Bot):
     connected = 0
     def __init__(self, ws):
         self.ws = ws
+        self.offline = False
         self.__class__.connected += 1
         Bot.__init__(self)
         self.atk_log = self.__class__.atk_log
@@ -49,8 +51,10 @@ class WebSocketBot(Bot):
         print "conn-1=%d" % self.connected
 
     def _print(self, message):
-        self.ws.send(message)
+        if self.ws:
+            self.ws.send(message)
 
+offline_bots = {}
 def websocket_app(environ, start_response):
     request = Request(environ)
     if request.path == '/bot' and 'wsgi.websocket' in environ:
@@ -58,7 +62,26 @@ def websocket_app(environ, start_response):
         login_id = request.GET['id']
         password = request.GET['password']
         area = request.GET.get('area', None)
+        offline = request.GET.get('offline', False)
+        if offline and login_id not in config.allow_offline:
+            offline = False
+        if not offline:
+            ws.send("offline disallowed.")
+
+        if login_id+password in offline_bots:
+            ws.send("bot reconnected!")
+            bot = offline_bots[login_id+password]
+            bot.ws = ws
+            bot.offline = offline
+            while not ws.closed:
+                time.sleep(60)
+            return
+
         bot = WebSocketBot(ws)
+        if offline:
+            bot.offline = True
+            offline_bots[login_id+password] = bot
+
         print "conn+%s=%d %s" % (environ.get('HTTP_X_REAL_IP', environ['REMOTE_ADDR']),
                                  WebSocketBot.connected, environ.get('HTTP_USER_AGENT', '-'))
         while True:
@@ -66,17 +89,25 @@ def websocket_app(environ, start_response):
                 bot.run(login_id, password, int(area) if area else None)
             except ma.HeaderError, e:
                 print e.code, e.message
-                ws.send('%s %s %s' % (e.code, e.message, 'sleep for 10min'))
+                if bot.ws:
+                    bot.ws.send('%s %s %s' % (e.code, e.message, 'sleep for 10min'))
                 time.sleep(10*60)
                 continue
-            except WebSocketError, e:
-                break
-            except socket.error:
+            except (socket.error, WebSocketError), e:
+                if bot.offline:
+                    bot.ws = None
+                    continue
                 break
             except Exception, e:
                 import traceback; traceback.print_exc()
-                ws.send('%s' % e)
+                try:
+                    bot.ws.send('%s' % e)
+                except WebSocketError:
+                    break
                 break
+        if login_id+password in offline_bots:
+            print "offline bot exit. login_id=%s" % login_id
+            del offline_bots[login_id+password]
     else:
         start_response("200 OK", [("Content-Type", "text/html")])
         return open("bot.html").readlines()
