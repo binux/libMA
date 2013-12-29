@@ -17,6 +17,7 @@ from webob import Request
 from bot import Bot
 
 class WebSocketBot(Bot):
+    AP_LIMIT = 0
     SLEEP_TIME = 60
     CHOOSE_CARD_LIMIT = 30
     NCARDS_LIMIT = [3, ]

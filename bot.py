@@ -95,7 +95,7 @@ class Bot(object):
         hp_skill = sum([x.hp*0.1 for x in cards if x.skill_type==2])
 
         hp = sum([x.hp for x in cards])*line_hp_combo+hp_skill
-        atks = [sum([x.power*1.1 if x.skill_type==1 else x.power
+        atks = [sum([x.power*1.05 if x.skill_type==1 else x.power
                 for x in cards[i*3:i*3+3]]) for i in range(0, lines)]
         rounds = int(hp / fairy_atk - 0.00001) + 1
         atk = 0
