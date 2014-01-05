@@ -20,6 +20,47 @@
         <input type=checkbox name=offline /> offline
         <input id=submit type=submit value=login />
       </form>
+      <div id="setting" style="display: none;">
+        <hr />
+        预留AP：<input onchange="ws.send('set AP_LIMIT '+this.value)" value="20" />
+        预留BC：<input onchange="ws.send('set BC_LIMIT '+this.value)" value="9999" />
+        自动卖卡：低于<input onchange="ws.send('set SELL_CARDS '+this.value)" value="0" />星
+        <br />
+        <input type="checkbox" onchange="ws.send('set_bool NEXT_AREA'+this.checked)" checked />自动换区域
+        <input type="checkbox" onchange="ws.send('set_bool NEXT_FLOOR '+this.checked)" checked />自动上楼
+        <input type="checkbox" onchange="ws.send('set_bool REWARDS '+this.checked)" />自动领奖
+        <input type="checkbox" onchange="ws.send('set_bool GACHA_GACHA '+this.checked)" />自动抽DS卷
+        <input type="checkbox" onchange="ws.send('set_bool GACHA_FRIEND '+this.checked)" />自动抽伴点
+        <button onclick="ws.send('item_use 1')">吃绿:AP</button>
+        <button onclick="ws.send('item_use 2')">吃红:BC</button>
+        <button onclick="log.innerHTML=''">清除日志</button>
+        <br />
+        舔怪卡组：<input onchange="ws.send('roundtable low_cost '+this.value)" value="" />
+        大刀卡组：<input onchange="ws.send('roundtable high_damage '+this.value)" value="" />
+        尾刀卡组：<input onchange="ws.send('roundtable kill '+this.value)" value="" />
+        <br />
+        <a onclick="compound.style.display=compound.style.display=='block'?'none':'block'" href="javascript:void();">合成面板</a>
+        <div id="compound" style="display: none;">
+          <button onclick="ws.send('fairy_rewards 1')">领取妖精奖励</button>
+          | 以
+          <select id="sort_cards_by">
+            <option selected>rarity</option>
+            <option>cp</option>
+            <option>lv</option>
+            <option>sale_price</option>
+            <option>hp_power</option>
+            <option>hp</option>
+            <option>power</option>
+            <option>max_lv</option>
+          </select>
+          排序，并过滤<input id="sort_cards_filter" type="checkbox" checked />一级和满级的卡
+          <button onclick="ws.send('sort_card '+sort_cards_by.value+' '+sort_cards_filter.checked)">go</button>
+          <br />
+          用<input id='compound_max_lv' value=4 />级以下的狗粮，合成id为<input id='compound_base' />的卡到<input id='compound_target_lv' value=77 />级
+          <button onclick="ws.send('compound '+compound_base.value+' '+compound_target_lv.value+' '+compound_max_lv.value)">go</button>
+        </div>
+
+      </div>
     </section>
     <section id=log>
     </section>
@@ -43,9 +84,11 @@
       ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline);
       ws.onopen = function() {
         log.innerHTML += "<br />connected.";
+        document.querySelector("#setting").style.display = 'block';
       };
       ws.onclose = function() {
         log.innerHTML += "<br /><span class=error>disconnected.</span>";
+        document.querySelector("#setting").style.display = 'none';
         setTimeout(function() { login(form); }, 60*1000);
       };
       ws.onmessage = function(event) {

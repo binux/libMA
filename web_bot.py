@@ -81,6 +81,40 @@ class WebSocketBot(Bot):
 
     def on_wsmessage(self, message):
         print message
+
+        cmd, rest = message.split(' ', 1)
+        if cmd == 'item_use':
+            self.ma.item_use(int(rest))
+            self.report()
+        elif cmd == 'set':
+            attr, value = rest.split(' ', 1)
+            setattr(self, attr, int(value))
+        elif cmd == 'set_bool':
+            attr, value = rest.split(' ', 1)
+            setattr(self, attr, value == 'true')
+        elif cmd == 'roundtable':
+            _type, value = rest.split(' ', 1)
+            self.roundtable[_type] = value
+        elif cmd == 'sort_card':
+            by, _filter = rest.split(' ', 1)
+            for card in self.sort_card(by):
+                if _filter == 'true' and (card.lv == 1 or card.lv == card.lv_max):
+                    continue
+                string = u"%s %s-%d lv%d/%d %s=%s" % (card.serial_id, card.name, card.rarity, card.lv, card.lv_max,
+                                           by, getattr(card, by))
+                self._print(string)
+        elif cmd == 'fairy_rewards':
+            self.fairy_rewards()
+            if self.SELL_CARDS:
+                self.sell_cards(self.SELL_CARDS)
+            self.report()
+        elif cmd == 'compound':
+            base_card, target_lv, max_lv = map(int, rest.split(' '))
+            base_card = self.ma.cards[base_card]
+            self.compound(base_card, target_lv, max_lv)
+        else:
+            self._print('unknow command: %s' % message)
+            return
         self._print(message)
 
     def on_wsclose(self):
@@ -98,13 +132,19 @@ def recv_message(ws, bot):
     while True:
         try:
             message = ws.receive()
+            if not message:
+                bot.on_wsclose()
+                break
         except (socket.error, WebSocketError), e:
             bot.on_wsclose()
             break
         except gevent.GreenletExit:
             break
 
-        bot.on_wsmessage(message)
+        try:
+            bot.on_wsmessage(message)
+        except Exception, e:
+            bot._print('%s' % e)
 
 offline_bots = {}
 def websocket_app(environ, start_response):

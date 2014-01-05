@@ -18,12 +18,21 @@ class Bot(object):
     CHOOSE_CARD_LIMIT = 50
     NCARDS_LIMIT = [3, ]
     AP_LIMIT = 20
+    BC_LIMIT = 9999
     OPERATION_TIME = 2
+    SELL_CARDS = 0
+    NEXT_FLOOR = True
+    NEXT_AREA = True
+    REWARDS = False
+    GACHA_GACHA = False
+    GACHA_FRIEND = False
+
     def __init__(self):
         self.ma = ma.MA()
         self.my_fairy = None
         self.touched_fairies = set()
         self.atk_log = {}
+        self.roundtable = dict(getattr(config, "roundtable", {}))
 
     def _print(self, message):
         print message
@@ -118,9 +127,10 @@ class Bot(object):
         return cards
 
     def build_roundtable(self, _type=None, **kwargs):
-        if getattr(config, 'roundtable', {}).get(_type):
-            _type = getattr(config, 'roundtable', {}).get(_type)
+        if self.roundtable.get(_type):
+            _type = self.roundtable.get(_type)
 
+        adjust = False
         if False:
             pass
         elif _type == 'kill':
@@ -181,6 +191,7 @@ class Bot(object):
             if not cards or self.ma.bc < cards[0].cost:
                 return False
         else:
+            adjust = False
             _cards = _type.split('|')
             cards = []
             for _card in _cards:
@@ -195,7 +206,8 @@ class Bot(object):
                 return False
 
         if cards != self.ma.roundtable:
-            cards = self.adjust_card_order(cards)
+            if adjust:
+                cards = self.adjust_card_order(cards)
             self._print('changing roundtable: %s cost: %s' % (' | '.join([x.name for x in cards]),
                                                               sum([x.cost for x in cards])))
             self.ma.save_deck_card(cards)
@@ -235,7 +247,8 @@ class Bot(object):
             if fairy_event.user.id == self.ma.user_id:
                 fairy_event.fairy.discoverer_id = fairy_event.user.id
                 self.my_fairy = fairy_event.fairy
-            if self.ma.bc < self.ma.bc_max - 1 and fairy_event.fairy.serial_id in self.touched_fairies: # touched
+            if not self.ma.bc > min(self.BC_LIMIT, self.ma.bc_max - 1) \
+                    and fairy_event.fairy.serial_id in self.touched_fairies: # touched
                 continue
 
             fairy = self.ma.fairy_floor(fairy_event.fairy.serial_id, fairy_event.user.id,
@@ -249,7 +262,7 @@ class Bot(object):
 
             # strategy goes here
             ret = False
-            if self.ma.bc >= self.ma.bc_max - 20 \
+            if self.ma.bc >= min(self.BC_LIMIT, self.ma.bc_max - 20) \
                     and time.time() - fairy_event.start_time > self.KEEP_FAIRY_TIME \
                     and (self.my_fairy is None or fairy.discoverer_id == self.ma.user_id):
                 ret = False
@@ -420,9 +433,24 @@ class Bot(object):
         self.choose_area(area)
         while True:
             self.report()
+            if self.SELL_CARDS:
+                self.sell_cards(self.SELL_CARDS)
             self.fairy()
-            self.explore(next_area=(False if area else True))
+            self.explore(next_area=self.NEXT_AREA, next_floor=self.NEXT_FLOOR)
+            if self.REWARDS:
+                self.rewards()
+            self.gacha(gacha=self.GACHA_GACHA, friend=self.GACHA_FRIEND)
             time.sleep(self.SLEEP_TIME)
+
+    def sort_card(self, by, reverse=True):
+        for card in self.ma.cards.values():
+            card.hp_power = card.hp + card.power
+            card.cp =  card.hp_power / card.cost
+            card.lvmax_hp_power = card.lvmax_hp + card.lvmax_power
+            card.lvmax_cp = card.lvmax_hp_power / card.cost
+
+        return sorted(self.ma.cards.values(), key=lambda x: getattr(x, by),
+                reverse=reverse)
 
 if __name__ == '__main__':
     import sys
