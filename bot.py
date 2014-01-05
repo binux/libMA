@@ -33,6 +33,7 @@ class Bot(object):
         self.touched_fairies = set()
         self.atk_log = {}
         self.roundtable = dict(getattr(config, "roundtable", {}))
+        self._quit = False
 
     def _print(self, message):
         print message
@@ -431,7 +432,7 @@ class Bot(object):
     def run(self, login_id, password, area=None):
         self.login(login_id, password)
         self.choose_area(area)
-        while True:
+        while not self._quit:
             self.report()
             if self.SELL_CARDS:
                 self.sell_cards(self.SELL_CARDS)

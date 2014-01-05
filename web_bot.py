@@ -17,6 +17,13 @@ from geventwebsocket.handler import WebSocketHandler
 from webob import Request
 from bot import Bot
 
+def wrapper(self, cls, func):
+    def wrap(*args, **kwargs):
+        _ = func(*args, **kwargs)
+        cls._card_rev = self.ma._card_rev
+        return _
+    return wrap
+
 class WebSocketBot(Bot):
     AP_LIMIT = 0
     SLEEP_TIME = 60
@@ -39,22 +46,14 @@ class WebSocketBot(Bot):
         assert self.ma.islogin, 'login error!'
         self.ma.mainmenu()
         
-
         cls = self.__class__
-        def wrapper(func):
-            def wrap(*args, **kwargs):
-                _ = func(*args, **kwargs)
-                cls._card_rev = self.ma._card_rev
-                return _
-            return wrap
         self.ma._master_cards = cls._master_cards
-        self.ma.masterdata_card = wrapper(self.ma.masterdata_card)
-
+        self.ma.masterdata_card = wrapper(self, cls, self.ma.masterdata_card)
         _ = self.ma.master_cards
         self.ma.roundtable_edit()
 
     def run(self, login_id, password, area=None):
-        while True:
+        while not self._quit:
             try:
                 super(WebSocketBot, self).run(login_id, password, int(area) if area else None)
             except ma.HeaderError, e:
@@ -63,7 +62,11 @@ class WebSocketBot(Bot):
                 if e.code == 1000:
                     break
                 time.sleep(10*60)
-                continue
+                if self.offline:
+                    continue
+                if self.ws:
+                    continue
+                break
             except (socket.error, WebSocketError), e:
                 self.ws = None
                 if self.offline:
@@ -78,6 +81,11 @@ class WebSocketBot(Bot):
                 if self.offline:
                     continue
                 break
+
+    def quit(self):
+        # fix references
+        self.ma.masterdata_card = None
+        self._quit = True
 
     def on_wsmessage(self, message):
         print message
@@ -118,7 +126,10 @@ class WebSocketBot(Bot):
         self._print(message)
 
     def on_wsclose(self):
-        self.ws = None
+        #self.ws = None
+        #if not self.offline:
+            #self._quit = True
+        pass
 
     def __del__(self):
         self.__class__.connected -= 1
@@ -183,14 +194,18 @@ def websocket_app(environ, start_response):
 
         g = gevent.spawn(recv_message, ws, bot)
         bot.run(login_id, password, int(area) if area else None)
-        g.kill()
+        g.kill(block=False)
+        bot.quit()
 
         if login_id+password in offline_bots:
             print "offline bot exit. login_id=%s" % login_id
             del offline_bots[login_id+password]
-    else:
+    elif request.path == '/':
         start_response("200 OK", [("Content-Type", "text/html")])
         return open("bot.html").readlines()
+    else:
+        start_response("404 NOT FOUND", [("Content-Type", "text/html")])
+        return ("404 NOT FOUND", )
 
 if __name__ == '__main__':
     gevent.monkey.patch_all()
