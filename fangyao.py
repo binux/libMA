@@ -9,6 +9,7 @@ import sys
 import time
 import config
 from bot import Bot
+from ma import HeaderError
 
 class FangYaoBot(Bot):
     AP_LIMIT = 0
@@ -33,13 +34,22 @@ class FangYaoBot(Bot):
         ret = self.ma.rewardbox()
         ids = []
         for each in ret.xpath('//rewardbox'):
-            if each.type != 4:
+            #if each.type != 4:
                 ids.append(each.id)
         while ids:
             ret = self.ma.get_rewards(ids[:20])
             self._print('get reward')
             ids = ids[20:]
             time.sleep(self.OPERATION_TIME)
+
+    def check_cards(self):
+        cards = []
+        for card in self.ma.cards.itervalues():
+            if card.master_card_id in self.NOT_SOLD_CARDS or card.rarity >= 5:
+                cards.append(card)
+        cards = sorted(cards, key=lambda x: (x.rarity, x.name, -x.lv))
+        for card in cards:
+            print u'%s-%d lv%d/%d' % (card.name, card.rarity, card.lv, card.lv_max)
 
 class JueXingBot(Bot):
     def _print(self, msg):
@@ -79,11 +89,16 @@ class JueXingBot(Bot):
                 self._print('touch fairy: %slv%s by %s' % (fairy.name, fairy.lv, fairy_event.user.name))
                 ret = self.battle(fairy.serial_id, fairy.discoverer_id)
                 if ret is False:
+                    self._print('battle loss')
                     return False
                 elif hasattr(ret.explore, 'rare_fairy'): #juexing
                     rare_fairy = ret.explore.rare_fairy
                     fairy = self.ma.fairy_floor(rare_fairy.serial_id, self.ma.user_id).xpath('//explore/fairy')[0]
                     self._print('!!touch fairy: %slv%s by %s' % (fairy.name, fairy.lv, fairy_event.user.name))
+                    self.AP_LIMIT = 0
+                    self.my_fairy = None
+                    self.choose_area()
+                    self.explore(next_area=False)
                     ret = self.build_roundtable('high_damage') or self.build_roundtable('low_cost')
                     if ret:
                         self.battle(fairy.serial_id, fairy.discoverer_id)
@@ -92,8 +107,12 @@ class JueXingBot(Bot):
                         raise Exception("build round table error")
                 elif ret.battle_result.winner:
                     return True
+                else:
+                    self._print(ret)
+                    return False
             else:
                 raise Exception("build round table error")
+        self._print('fairy not found')
 
 if __name__ == '__main__':
     main_bot = JueXingBot()
@@ -108,13 +127,20 @@ if __name__ == '__main__':
         bot = FangYaoBot()
         bot.AP_LIMIT = 0
         bot.OPERATION_TIME = 0.5
+        bot.NOT_SOLD_CARDS = (66, 390, 391, 392, 404, 124, 8, 260, 143, 124, 49)
         bot.login(login_id, password)
+        bot.sell_cards(2)
+        bot.fairy_rewards()
         bot.rewards()
+        bot.gacha(friend=True, auto_build=0)
+        bot.check_cards()
         bot.friends(bot.ma.friend_max-1)
+        bot.report()
 
         friendlist = bot.ma.friendlist()
         is_friend = False
         for user in friendlist.xpath('//user'):
+            #print unicode(user.name), user.id, main_bot.ma.user_id
             if user.id == main_bot.ma.user_id:
                 is_friend = True
 
@@ -132,15 +158,27 @@ if __name__ == '__main__':
             bot.ma.add_friend(main_bot.ma.user_id)
             main_bot.ma.approve_friend(bot.ma.user_id)
             main_bot.free_point('bc')
+            friendlist = bot.ma.friendlist()
+            is_friend = False
+            for user in friendlist.xpath('//user'):
+                if user.id == main_bot.ma.user_id:
+                    is_friend = True
+            if not is_friend:
+                print 'not friend!'
+                continue
         else:
             print 'already friend.'
         bot.choose_area()
-        bot.sell_cards(1)
+        bot.free_point('ap')
         while True:
-            bot.fairy()
-            bot.explore(next_floor=False, next_area=False)
-            bot.free_point('ap')
-            bot.report()
+            try:
+                bot.fairy()
+                bot.sell_cards(2)
+                bot.explore(next_floor=False, next_area=False)
+                bot.report()
+            except HeaderError, e:
+                print e
+                continue
             if len(main_bot.ma.cards) >= 200:
                 main_bot.sell_cards(3)
             if not main_bot._fairy(bot.ma.user_id):

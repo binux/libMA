@@ -105,6 +105,8 @@ class MA:
         self.battle_cooldown = 0
         self.ignore_error = False
         self.your_data = {}
+        self._master_cards = {}
+        self._card_rev = None
 
     @property
     def islogin(self):
@@ -294,7 +296,7 @@ class MA:
 
         # save it
         self._card_rev = self.revision['card_rev']
-        self._master_cards = {}
+        self._master_cards.clear()
         for each in body.xpath('//card'):
             card = {}
             for attr in ('character_id/i', 'base_hp/i', 'extra/i', 'base_holo_hp/i', 'base_power/i',

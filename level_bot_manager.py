@@ -93,10 +93,21 @@ def _run_task(bot, account, battle_set):
             stop_set.remove(int(account['id']))
             bot._print('stoped!')
             break
-        if not bot.build_roundtable('battle'):
-            break
+
+        # lvup!
+        if bot.ma.free_ap_bc_point:
+            account['lv'] = bot.ma.level
+            account['status'] = 'RUNNING'
+            accountdb.update(**account)
+            if '|ap' in account.get('invite', ''):
+                bot.free_point('ap')
+            else:
+                bot.free_point('bc')
         if '|ap' in account.get('invite', '') and bot.ma.ap > 10:
             bot.explore()
+
+        if not bot.build_roundtable('battle'):
+            break
 
         # battle
         try:
@@ -115,16 +126,6 @@ def _run_task(bot, account, battle_set):
             continue
         if hp != cur['hp'] or atk != cur['atk']:
             battledb.update(cur['uid'], hp, atk)
-
-        # lvup!
-        if bot.ma.free_ap_bc_point:
-            account['lv'] = bot.ma.level
-            account['status'] = 'RUNNING'
-            accountdb.update(**account)
-            if '|ap' in account.get('invite', ''):
-                bot.free_point('ap')
-            else:
-                bot.free_point('bc')
 
         # low bc
         if bot.ma.bc < bot.ma.cost:

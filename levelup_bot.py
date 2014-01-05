@@ -116,32 +116,34 @@ class LevelBot(Bot):
         except ma.HeaderError, e:
             ret = self.ma.start_scenario(ret.story_outline.scenario_id)
         if hasattr(ret.scenario, 'sbattle_ready'):
-            if self.build_roundtable('high_damage'):
-                while self.ma.bc >= self.ma.cost:
-                    ret = self.ma.story_battle()
-                    if ret.battle_result.winner:
-                        self._print('story battle win')
-                        return True
-                    else:
-                        self._print('story battle lose')
-                        continue
-                return False
-            else:
-                return False
+            return False
+            #if self.build_roundtable('high_damage'):
+                #while self.ma.bc >= self.ma.cost:
+                    #ret = self.ma.story_battle()
+                    #if ret.battle_result.winner:
+                        #self._print('story battle win')
+                        #return True
+                    #else:
+                        #self._print('story battle lose')
+                        #continue
+                #return False
+            #else:
+                #return False
         ret = self.ma.next_scenario(ret.scenario.phase_id, 0)
         if hasattr(ret.scenario, 'sbattle_ready'):
-            if self.build_roundtable('high_damage'):
-                while self.ma.bc >= self.ma.cost:
-                    ret = self.ma.story_battle()
-                    if ret.battle_result.winner:
-                        self._print('story battle win')
-                        return True
-                    else:
-                        self._print('story battle lose')
-                        continue
-                return False
-            else:
-                return False
+            return False
+            #if self.build_roundtable('high_damage'):
+                #while self.ma.bc >= self.ma.cost:
+                    #ret = self.ma.story_battle()
+                    #if ret.battle_result.winner:
+                        #self._print('story battle win')
+                        #return True
+                    #else:
+                        #self._print('story battle lose')
+                        #continue
+                #return False
+            #else:
+                #return False
         return True
 
     def task_check(self):
@@ -161,11 +163,15 @@ if __name__ == '__main__':
     bot = LevelBot()
     print '----------------------', sys.argv[1], '--------------------------'
     bot.login(sys.argv[1], sys.argv[2])
-    bot.report()
-    bot.free_point('ap')
-    while bot.ma.ap > 5:
-        bot.explore()
-        bot.free_point('ap')
+    bot.rewards()
+    bot.gacha(friend=True)
+    #bot.report()
+    #while bot.story():
+        #continue
+    #bot.free_point('ap')
+    #while bot.ma.ap > 5:
+        #bot.explore()
+        #bot.free_point('ap')
     #import IPython; IPython.embed()
     #for player in bot.scan_player(range(int(sys.argv[3]), int(sys.argv[4]))):
         #print player.id, unicode(player.name), player.deck_rank, player.leader_card.hp, unicode(player.last_login)
