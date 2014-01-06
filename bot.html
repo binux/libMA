@@ -26,7 +26,7 @@
         预留BC：<input onchange="ws.send('set BC_LIMIT '+this.value)" value="9999" />
         自动卖卡：低于<input onchange="ws.send('set SELL_CARDS '+this.value)" value="0" />星
         <br />
-        <input type="checkbox" onchange="ws.send('set_bool NEXT_AREA'+this.checked)" checked />自动换区域
+        <input type="checkbox" onchange="ws.send('set_bool NEXT_AREA '+this.checked)" checked />自动换区域
         <input type="checkbox" onchange="ws.send('set_bool NEXT_FLOOR '+this.checked)" checked />自动上楼
         <input type="checkbox" onchange="ws.send('set_bool REWARDS '+this.checked)" />自动领奖
         <input type="checkbox" onchange="ws.send('set_bool GACHA_GACHA '+this.checked)" />自动抽DS卷
