@@ -5,6 +5,7 @@
 #         http://binux.me
 # Created on 2013-08-25 17:10:07
 
+import os
 import ma
 import time
 import socket
@@ -202,7 +203,7 @@ def websocket_app(environ, start_response):
             del offline_bots[login_id+password]
     elif request.path == '/':
         start_response("200 OK", [("Content-Type", "text/html")])
-        return open("bot.html").readlines()
+        return open(os.path.join(os.path.dirname(__file__), "bot.html")).readlines()
     else:
         start_response("404 NOT FOUND", [("Content-Type", "text/html")])
         return ("404 NOT FOUND", )
