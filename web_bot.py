@@ -168,9 +168,9 @@ def websocket_app(environ, start_response):
         area = request.GET.get('area', None)
         offline = request.GET.get('offline', False)
 
-        if offline and login_id not in config.allow_offline:
-            offline = False
-            ws.send("offline disallowed.")
+        #if offline and login_id not in config.allow_offline:
+            #offline = False
+            #ws.send("offline disallowed.")
         if offline:
             ws.send("offline enabled.")
 
