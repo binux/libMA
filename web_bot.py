@@ -43,7 +43,7 @@ class WebSocketBot(Bot):
 
     def login(self, login_id, password):
         self.ma.login(login_id, password)
-        self._print("by binux@ma.binux.me")
+        self._print("by binux")
         assert self.ma.islogin, 'login error!'
         self.ma.mainmenu()
         
@@ -180,7 +180,7 @@ def websocket_app(environ, start_response):
             bot.ws = ws
             bot.offline = offline
             g = gevent.spawn(recv_message, ws, bot)
-            while not ws.closed:
+            while bot.ws:
                 time.sleep(60)
             g.kill()
             return
