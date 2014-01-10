@@ -17,6 +17,11 @@
         login_id: <input name=id />
         password: <input type=password name=pwd />
         area_id: <input name=area />
+        server: <select name=server>
+          <option value="http://game1-cbt.ma.sdo.com:10001">CN1</option>
+          <option value="http://game2-cbt.ma.sdo.com:10001">CN2</option>
+          <option value="http://game3-cbt.ma.sdo.com:10001">CN3</option>
+        </select>
         <input type=checkbox name=offline /> offline
         <input id=submit type=submit value=login />
       </form>
@@ -80,8 +85,9 @@
       var login_id = form.id.value,
           password = form.pwd.value,
           area = form.area.value,
+          server = form.server.value,
           offline = form.offline.checked && "1" || "";
-      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline);
+      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline+"&server="+encodeURIComponent(server));
       ws.onopen = function() {
         log.innerHTML += "<br />connected.";
         document.querySelector("#setting").style.display = 'block';
@@ -97,6 +103,9 @@
       submit.disabled = true;
       login_form.id.disabled = true;
       login_form.pwd.disabled = true;
+      login_form.area.disabled = true;
+      login_form.server.disabled = true;
+      login_form.offline.disabled = true;
       return false;
     }
   </script>

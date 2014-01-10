@@ -38,7 +38,7 @@ class Bot(object):
     def _print(self, message):
         print message
 
-    def login(self, login_id, password, server=None):
+    def login(self, login_id, password):
         #need dump masterdata and cards
         #if os.path.exists('/tmp/cookie.%s' % login_id):
             #cookie = pickle.load(open('/tmp/cookie.%s' % login_id, 'r'))
@@ -50,10 +50,7 @@ class Bot(object):
                 ##import traceback; traceback.print_exc()
         self.ma.check_inspection()
         self.ma.notification_post_devicetoken(login_id, password)
-        if server:
-            self.ma.login(login_id, password, server)
-        else:
-            self.ma.login(login_id, password)
+        self.ma.login(login_id, password)
         self.ma.mainmenu()
         #cookie = self.ma.session.cookies
         #pickle.dump(cookie, open('/tmp/cookie.%s' % login_id, 'w'))
