@@ -271,8 +271,7 @@ class MA:
     def save_character(self, name, country=1):
         return self.get("~/tutorial/save_character", name=name, country=country)
 
-    def login(self, login_id, password, server=config.BASE_URL):
-        self.BASE_URL = server
+    def login(self, login_id, password):
         # only first 14 works..
         password = password[:14]
         body = self.get("~/login", login_id=login_id, password=password)

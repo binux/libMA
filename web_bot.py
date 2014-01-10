@@ -166,6 +166,7 @@ def websocket_app(environ, start_response):
         login_id = request.GET['id']
         password = request.GET['password']
         area = request.GET.get('area', None)
+        server = request.GET.get('server', config.BASE_URL)
         offline = request.GET.get('offline', False)
 
         #if offline and login_id not in config.allow_offline:
@@ -194,6 +195,7 @@ def websocket_app(environ, start_response):
                                  WebSocketBot.connected, environ.get('HTTP_USER_AGENT', '-'))
 
         g = gevent.spawn(recv_message, ws, bot)
+        bot.ma.BASE_URL = server
         bot.run(login_id, password, int(area) if area else None)
         g.kill(block=False)
         bot.quit()
