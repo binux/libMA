@@ -18,6 +18,11 @@ from geventwebsocket.handler import WebSocketHandler
 from webob import Request
 from bot import Bot
 
+import sys
+import codecs
+sys.stdout = codecs.getwriter('utf8')(sys.stdout)
+
+
 def wrapper(self, cls, func):
     def wrap(*args, **kwargs):
         _ = func(*args, **kwargs)
