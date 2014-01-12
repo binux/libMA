@@ -158,6 +158,18 @@ def recv_message(ws, bot):
         except Exception, e:
             bot._print('%s' % e)
 
+#from ma import MA, Card
+#def dump_garbage():
+    #print "GARBAGE:"
+    #gc.collect()
+    #print "GARBAGE OBJECTS:"
+    #for x in gc.garbage:
+        #for x in gc.garbage:
+            #if not isinstance(x, MA) and not isinstance(x, Card):
+                #continue
+            #s = str(x)
+            #print type(x), "\n ", s
+
 offline_bots = {}
 def websocket_app(environ, start_response):
     request = Request(environ)
@@ -203,6 +215,7 @@ def websocket_app(environ, start_response):
         if login_id+password in offline_bots:
             print "offline bot exit. login_id=%s" % login_id
             del offline_bots[login_id+password]
+
     elif request.path == '/':
         start_response("200 OK", [("Content-Type", "text/html")])
         return open(os.path.join(os.path.dirname(__file__), "bot.html")).readlines()
@@ -211,6 +224,9 @@ def websocket_app(environ, start_response):
         return ("404 NOT FOUND", )
 
 if __name__ == '__main__':
+    #import gc
+    #gc.enable()
+    #gc.set_debug(gc.DEBUG_LEAK)
     gevent.monkey.patch_all()
     server = gevent.pywsgi.WSGIServer(("", 8000), websocket_app, handler_class=WebSocketHandler)
     server.serve_forever()
