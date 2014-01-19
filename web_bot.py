@@ -210,7 +210,7 @@ def websocket_app(environ, start_response):
             del offline_bots[login_id+password]
     elif request.path == '/':
         start_response("200 OK", [("Content-Type", "text/html")])
-        return open(os.path.join(os.path.dirname(__file__), "bot.html")).readlines()
+        return open(os.path.join(os.path.dirname(__file__), "bot.html")).read().replace("$CONN", WebSocketBot.connected)
     else:
         start_response("404 NOT FOUND", [("Content-Type", "text/html")])
         return ("404 NOT FOUND", )
