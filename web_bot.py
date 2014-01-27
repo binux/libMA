@@ -56,6 +56,7 @@ class WebSocketBot(Bot):
     def run(self, login_id, password, area=None):
         while not self._quit:
             try:
+                self._print('running...')
                 super(WebSocketBot, self).run(login_id, password, int(area) if area else None)
             except ma.HeaderError, e:
                 print e.code, e.message
@@ -94,6 +95,8 @@ class WebSocketBot(Bot):
         cmd, rest = message.split(' ', 1)
         if cmd == 'item_use':
             self.ma.item_use(int(rest))
+            self.report()
+        if cmd == 'report':
             self.report()
         elif cmd == 'set':
             attr, value = rest.split(' ', 1)
@@ -218,7 +221,7 @@ def websocket_app(environ, start_response):
 
     elif request.path == '/':
         start_response("200 OK", [("Content-Type", "text/html")])
-        return open(os.path.join(os.path.dirname(__file__), "bot.html")).readlines()
+        return [open(os.path.join(os.path.dirname(__file__), "bot.html")).read().replace("$CONN", str(WebSocketBot.connected)), ]
     else:
         start_response("404 NOT FOUND", [("Content-Type", "text/html")])
         return ("404 NOT FOUND", )

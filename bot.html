@@ -38,6 +38,7 @@
         <input type="checkbox" onchange="ws.send('set_bool GACHA_FRIEND '+this.checked)" />自动抽伴点
         <button onclick="ws.send('item_use 1')">吃绿:AP</button>
         <button onclick="ws.send('item_use 2')">吃红:BC</button>
+        <button onclick="ws.send('report 1')">状态</button>
         <button onclick="log.innerHTML=''">清除日志</button>
         <br />
         舔怪卡组：<input onchange="ws.send('roundtable low_cost '+this.value)" value="" />
@@ -80,14 +81,17 @@
     }
     function login(form) {
       if (window.ws) {
+        if (ws.timeout) window.clearTimeout(ws.timeout);
         ws.close();
+        if (ws.timeout) window.clearTimeout(ws.timeout);
+        delete window.ws;
       }
       var login_id = form.id.value,
           password = form.pwd.value,
           area = form.area.value,
           server = form.server.value,
           offline = form.offline.checked && "1" || "";
-      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline+"&server="+encodeURIComponent(server));
+      window.ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline+"&server="+encodeURIComponent(server));
       ws.onopen = function() {
         log.innerHTML += "<br />connected.";
         document.querySelector("#setting").style.display = 'block';
@@ -95,7 +99,7 @@
       ws.onclose = function() {
         log.innerHTML += "<br /><span class=error>disconnected.</span>";
         document.querySelector("#setting").style.display = 'none';
-        setTimeout(function() { login(form); }, 60*1000);
+        ws.timeout = setTimeout(function() { login(form); }, 60*1000);
       };
       ws.onmessage = function(event) {
         log.innerHTML += "<br />"+event.data;
