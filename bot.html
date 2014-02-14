@@ -48,6 +48,8 @@
         <a onclick="compound.style.display=compound.style.display=='block'?'none':'block'" href="javascript:void();">合成面板</a>
         <div id="compound" style="display: none;">
           <button onclick="ws.send('fairy_rewards 1')">领取妖精奖励</button>
+          | 
+          <button onclick="ws.send('merge 5')">合成5星以上相同卡</button>
           | 以
           <select id="sort_cards_by">
             <option selected>rarity</option>
@@ -81,10 +83,7 @@
     }
     function login(form) {
       if (window.ws) {
-        if (ws.timeout) window.clearTimeout(ws.timeout);
-        ws.close();
-        if (ws.timeout) window.clearTimeout(ws.timeout);
-        delete window.ws;
+        return;
       }
       var login_id = form.id.value,
           password = form.pwd.value,
@@ -99,17 +98,15 @@
       ws.onclose = function() {
         log.innerHTML += "<br /><span class=error>disconnected.</span>";
         document.querySelector("#setting").style.display = 'none';
-        ws.timeout = setTimeout(function() { login(form); }, 60*1000);
+        setTimeout(function() { login(form); }, 60*1000);
+        submit.disabled = login_form.id.disabled = login_form.pwd.disabled = login_form.area.disabled = login_form.server.disabled = login_form.offline.disabled = false;
+        window.ws = null;
       };
       ws.onmessage = function(event) {
         log.innerHTML += "<br />"+event.data;
       };
-      submit.disabled = true;
-      login_form.id.disabled = true;
-      login_form.pwd.disabled = true;
-      login_form.area.disabled = true;
-      login_form.server.disabled = true;
-      login_form.offline.disabled = true;
+
+      submit.disabled = login_form.id.disabled = login_form.pwd.disabled = login_form.area.disabled = login_form.server.disabled = login_form.offline.disabled = true;
       return false;
     }
   </script>

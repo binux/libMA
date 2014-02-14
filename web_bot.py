@@ -124,6 +124,9 @@ class WebSocketBot(Bot):
             base_card, target_lv, max_lv = map(int, rest.split(' '))
             base_card = self.ma.cards[base_card]
             self.compound(base_card, target_lv, max_lv)
+        elif cmd == 'merge':
+            min_lv = int(rest)
+            self.merge(min_lv)
         else:
             self._print('unknow command: %s' % message)
             return
