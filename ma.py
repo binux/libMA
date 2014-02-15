@@ -13,6 +13,7 @@ import array
 import random
 import config
 import hashlib
+import weakref
 import tempfile
 import requests
 from os.path import join as path_join
@@ -66,10 +67,6 @@ class Card:
         for node in card.iterchildren():
             setattr(c, node.tag, int(node.text))
         return c
-
-    def set_ma(self, ma):
-        self.ma = ma
-        return self
 
     @property
     def master_card(self):
@@ -212,7 +209,8 @@ class MA:
             if your_data.xpath('./owner_card_list'):
                 self.cards = {}
                 for card in your_data.xpath('./owner_card_list/user_card'):
-                    card = Card.from_xml(card).set_ma(self)
+                    card = Card.from_xml(card)
+                    card.ma = weakref.proxy(self)
                     self.cards[card.serial_id] = card
             if your_data.xpath('./itemlist'):
                 self.iterms = {}

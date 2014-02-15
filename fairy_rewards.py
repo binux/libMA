@@ -13,12 +13,13 @@ from bot import Bot
 if __name__ == '__main__':
     bot = Bot()
     bot.login(config.loginId, config.password)
-    bot.fairy()
-    ok = False
-    while not ok:
-        bot.report()
-        if not bot.fairy_rewards():
-            break
-        bot.sell_cards(3)
-        base_card = bot.ma.cards[int(sys.argv[1])]
-        ok = bot.compound(base_card, len(sys.argv) == 2 and 77 or int(sys.argv[2]), 4)
+    bot.merge()
+    #bot.fairy()
+    #ok = False
+    #while not ok:
+        #bot.report()
+        #if not bot.fairy_rewards():
+            #break
+        #bot.sell_cards(3)
+        #base_card = bot.ma.cards[int(sys.argv[1])]
+        #ok = bot.compound(base_card, len(sys.argv) == 2 and 77 or int(sys.argv[2]), 4)

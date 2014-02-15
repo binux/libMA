@@ -61,6 +61,7 @@ class WebSocketBot(Bot):
     def run(self, login_id, password, area=None):
         while not self._quit:
             try:
+                self._print('running...')
                 super(WebSocketBot, self).run(login_id, password, int(area) if area else None)
             except ma.HeaderError, e:
                 print e.code, e.message
@@ -100,6 +101,8 @@ class WebSocketBot(Bot):
         if cmd == 'item_use':
             self.ma.item_use(int(rest))
             self.report()
+        if cmd == 'report':
+            self.report()
         elif cmd == 'set':
             attr, value = rest.split(' ', 1)
             setattr(self, attr, int(value))
@@ -126,6 +129,9 @@ class WebSocketBot(Bot):
             base_card, target_lv, max_lv = map(int, rest.split(' '))
             base_card = self.ma.cards[base_card]
             self.compound(base_card, target_lv, max_lv)
+        elif cmd == 'merge':
+            min_lv = int(rest)
+            self.merge(min_lv)
         else:
             self._print('unknow command: %s' % message)
             return
@@ -162,6 +168,18 @@ def recv_message(ws, bot):
             bot.on_wsmessage(message)
         except Exception, e:
             bot._print('%s' % e)
+
+#from ma import MA, Card
+#def dump_garbage():
+    #print "GARBAGE:"
+    #gc.collect()
+    #print "GARBAGE OBJECTS:"
+    #for x in gc.garbage:
+        #for x in gc.garbage:
+            #if not isinstance(x, MA) and not isinstance(x, Card):
+                #continue
+            #s = str(x)
+            #print type(x), "\n ", s
 
 offline_bots = {}
 def websocket_app(environ, start_response):
@@ -208,6 +226,7 @@ def websocket_app(environ, start_response):
         if login_id+password in offline_bots:
             print "offline bot exit. login_id=%s" % login_id
             del offline_bots[login_id+password]
+
     elif request.path == '/':
         start_response("200 OK", [("Content-Type", "text/html")])
         return [open(os.path.join(os.path.dirname(__file__), "bot.html")).read().replace("$CONN", str(WebSocketBot.connected)), ]
@@ -216,6 +235,9 @@ def websocket_app(environ, start_response):
         return ("404 NOT FOUND", )
 
 if __name__ == '__main__':
+    #import gc
+    #gc.enable()
+    #gc.set_debug(gc.DEBUG_LEAK)
     gevent.monkey.patch_all()
     server = gevent.pywsgi.WSGIServer(("", 8000), websocket_app, handler_class=WebSocketHandler)
     server.serve_forever()

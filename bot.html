@@ -47,6 +47,7 @@
         <input type="checkbox" onchange="ws.send('set_bool GACHA_FRIEND '+this.checked)" />自动抽伴点
         <button onclick="ws.send('item_use 1')">吃绿:AP</button>
         <button onclick="ws.send('item_use 2')">吃红:BC</button>
+        <button onclick="ws.send('report 1')">状态</button>
         <button onclick="log.innerHTML=''">清除日志</button>
         <br />
         舔怪卡组：<input onchange="ws.send('roundtable low_cost '+this.value)" value="" />
@@ -56,6 +57,8 @@
         <a onclick="compound.style.display=compound.style.display=='block'?'none':'block'" href="javascript:void();">合成面板</a>
         <div id="compound" style="display: none;">
           <button onclick="ws.send('fairy_rewards 1')">领取妖精奖励</button>
+          | 
+          <button onclick="ws.send('merge 5')">合成5星以上相同卡</button>
           | 以
           <select id="sort_cards_by">
             <option selected>rarity</option>
@@ -89,14 +92,14 @@
     }
     function login(form) {
       if (window.ws) {
-        ws.close();
+        return;
       }
       var login_id = form.id.value,
           password = form.pwd.value,
           area = form.area.value,
           server = form.server.value,
           offline = form.offline.checked && "1" || "";
-      ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline+"&server="+encodeURIComponent(server));
+      window.ws = new WebSocket("ws://"+location.host+"/bot?id="+login_id+"&password="+password+"&area="+area+"&offline="+offline+"&server="+encodeURIComponent(server));
       ws.onopen = function() {
         log.innerHTML += "<br />connected.";
         document.querySelector("#setting").style.display = 'block';
@@ -105,16 +108,14 @@
         log.innerHTML += "<br /><span class=error>disconnected.</span>";
         document.querySelector("#setting").style.display = 'none';
         setTimeout(function() { login(form); }, 60*1000);
+        submit.disabled = login_form.id.disabled = login_form.pwd.disabled = login_form.area.disabled = login_form.server.disabled = login_form.offline.disabled = false;
+        window.ws = null;
       };
       ws.onmessage = function(event) {
         log.innerHTML += "<br />"+event.data;
       };
-      submit.disabled = true;
-      login_form.id.disabled = true;
-      login_form.pwd.disabled = true;
-      login_form.area.disabled = true;
-      login_form.server.disabled = true;
-      login_form.offline.disabled = true;
+
+      submit.disabled = login_form.id.disabled = login_form.pwd.disabled = login_form.area.disabled = login_form.server.disabled = login_form.offline.disabled = true;
       return false;
     }
   </script>

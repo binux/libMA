@@ -391,6 +391,26 @@ class Bot(object):
             time.sleep(self.OPERATION_TIME)
         return base_card.lv >= target_lv
 
+    def merge(self, min_lv=4):
+        master_map = {}
+        for card in [x for x in self.ma.cards.values() \
+                if x.rarity >= min_lv]:
+            if card.master_card_id in self.NOT_SOLD_CARDS:
+                continue
+            master_map.setdefault(card.master_card_id, [])
+            master_map[card.master_card_id].append(card)
+        for key, value in master_map.iteritems():
+            if len(value) <= 1:
+                continue
+            value = sorted(value, key=lambda x: -x.lv)
+            card = value[0]
+            value = value[1:]
+            try:
+                ret = self.ma.card_compound(card, value[:30])
+                self._print('%s-%d max_lv:%d->%d' % (card.name, card.lv, card.lv_max, self.ma.cards[card.serial_id].lv_max))
+            except ma.HeaderError, e:
+                self._print('%s-%d %s' % (card.name, card.lv, e.message))
+
     def friends(self, max_friend=None):
         if max_friend is None:
             max_friend = self.ma.friend_max
