@@ -395,6 +395,8 @@ class Bot(object):
         master_map = {}
         for card in [x for x in self.ma.cards.values() \
                 if x.rarity >= min_lv]:
+            if card.master_card_id in self.NOT_SOLD_CARDS:
+                continue
             master_map.setdefault(card.master_card_id, [])
             master_map[card.master_card_id].append(card)
         for key, value in master_map.iteritems():
